@@ -1,0 +1,66 @@
+﻿@using AdminDashboard.Client.Store.Breadcrumb
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IState<BreadcrumbState> BreadcrumbState
+
+<RadzenComponents @rendermode="InteractiveWebAssembly" />
+<RadzenNotification />
+
+<RadzenLayout Style="height: 100vh;">
+    <!-- Header -->
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenImage Path="images/logo.jpg" Style="width: 64px; height: 64px;" />
+            <RadzenText Text="Fashion" />
+            <RadzenProfileMenu Style="margin-left: auto;">
+                <RadzenProfileMenuItem Text="Đăng xuất" Icon="logout" Path="/logout" />
+            </RadzenProfileMenu>
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenBody>
+        <!-- Sidebar và Content -->
+        <RadzenRow>
+            <!-- Sidebar -->
+            <RadzenColumn SizeXS="12" SizeSM="3" SizeMD="2">
+                <RadzenPanelMenu Multiple="true">
+                    <!-- Catalog -->
+                    <RadzenPanelMenuItem Text="Catalog" Icon="store">
+                        <RadzenPanelMenuItem Text="Danh mục" Path="/catalog/categories" Icon="category" />
+                        <RadzenPanelMenuItem Text="Sản phẩm" Path="/catalog/products" Icon="inventory" />
+                        <RadzenPanelMenuItem Text="Thuộc tính" Path="/catalog/product-attributes" Icon="edit_attributes" />
+                    </RadzenPanelMenuItem>
+                    <!-- Ordering -->
+                    <RadzenPanelMenuItem Text="Ordering" Icon="shopping_cart">
+                        <RadzenPanelMenuItem Text="Đơn hàng" Path="/orders" Icon="receipt" />
+                    </RadzenPanelMenuItem>
+                    <!-- Promotion -->
+                    <RadzenPanelMenuItem Text="Promotion" Icon="local_offer">
+                        <RadzenPanelMenuItem Text="Mã giảm giá" Path="/promotions/coupons" Icon="receipt" />
+                    </RadzenPanelMenuItem>
+                </RadzenPanelMenu>
+            </RadzenColumn>
+
+            <RadzenColumn SizeXS="12" SizeSM="9" SizeMD="10">
+                <RadzenCard>
+                    <RadzenStack>
+                        <RadzenBreadCrumb Style="margin: 1rem;">
+                            @foreach (var item in BreadcrumbState.Value.Items)
+                            {
+                                <RadzenBreadCrumbItem Text="@item.Text"
+                                                      Path="@item.Path" />
+                            }
+                        </RadzenBreadCrumb>
+                        @Body
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenBody>
+</RadzenLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

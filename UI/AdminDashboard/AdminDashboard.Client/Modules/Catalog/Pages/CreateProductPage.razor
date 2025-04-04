@@ -1,0 +1,131 @@
+﻿@page "/catalog/products/create"
+
+@inherits FluxorComponent
+
+@inject IDispatcher Dispatcher
+@inject IState<CategoryState> CategoryState
+@inject IState<ProductState> ProductState
+@inject NavigationManager NavigationManager
+
+<PageTitle>Tạo sản phẩm</PageTitle>
+
+<RadzenTemplateForm Data="@model" Submit="@((CreateProductRequest request) => HandleValidSubmit(request))">
+    <RadzenStack Gap="8">
+        <RadzenStack>
+            <RadzenFormField Text="Tên sản phẩm" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                <ChildContent>
+                    <RadzenTextBox Name="Name" @bind-Value="@model.Name" />
+                </ChildContent>
+                <Helper>
+                    <RadzenRequiredValidator Component="Name" Text="Tên sản phẩm không được để trống." />
+                </Helper>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Mô tả sản phẩm" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                <ChildContent>
+                    <RadzenHtmlEditor @bind-Value="@model.Description" Name="Description" Style="height: 400px" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Danh mục" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                <ChildContent>
+                    <RadzenDropDown Name="CategoryId"
+                                    Data="@CategoryState.Value.Categories"
+                                    TextProperty="@nameof(CategoryResponse.Name)"
+                                    ValueProperty="@nameof(CategoryResponse.Id)"
+                                    @bind-Value="@model.CategoryId" />
+                </ChildContent>
+                <Helper>
+                    <RadzenRequiredValidator Component="CategoryId" Text="Danh mục không được để trống." />
+                </Helper>
+            </RadzenFormField>
+        </RadzenStack>
+
+        <RadzenStack>
+            <RadzenStack>
+                <RadzenLabel Text="Sản phẩm có biến thể?" />
+                <RadzenCheckBox @bind-Value="@hasVariants" />
+            </RadzenStack>
+
+            @if (!hasVariants)
+            {
+                <RadzenFormField Text="Giá bán" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox Name="Price" @bind-Value="@model.Name" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Price" Text="Tên sản phẩm không được để trống." />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Giá khuyến mãi" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox Name="SalePrice" @bind-Value="@model.Name" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Ngày bắt đầu khuyến mãi" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenDatePicker Name="StartDiscountAt" @bind-Value="@model.Name" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Ngày kết thúc khuyến mãi" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenDatePicker Name="EndDiscountAt" @bind-Value="@model.Name" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Số lượng" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox Name="Quantity" @bind-Value="@model.Name" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Quantity" Text="Số lượng không được để trống." />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Chú thích ảnh" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox Name="Name" @bind-Value="@model.Name" />
+                    </ChildContent>
+                </RadzenFormField>
+            }
+        </RadzenStack>
+
+        <RadzenStack>
+            <RadzenButton ButtonType="ButtonType.Submit" Variant="Variant.Flat" Text="Lưu thay đổi" Disabled="@CategoryState.Value.IsCreating" />
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Text="Thoát" Click="@(() => NavigationManager.NavigateTo("/catalog/products"))" />
+        </RadzenStack>
+    </RadzenStack>
+
+
+</RadzenTemplateForm>
+
+
+@code {
+    bool hasVariants = false;
+    CreateProductRequest model = new();
+
+    protected override void OnInitialized()
+    {
+        if (!CategoryState.Value.Categories.Any())
+        {
+            Dispatcher.Dispatch(new FetchCategoriesAction());
+        }
+
+        Dispatcher.Dispatch(new SetBreadcrumbAction(new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Trang chủ", "/"),
+            new BreadcrumbItem("Sản phẩm", "/catalog/products"),
+            new BreadcrumbItem("Tạo sản phẩm", "")
+        }));
+
+        base.OnInitialized();
+    }
+
+    private void HandleValidSubmit(CreateProductRequest request)
+    {
+        Dispatcher.Dispatch(new CreateProductAction(request));
+    }
+}

@@ -1,0 +1,100 @@
+﻿@page "/catalog/product-attributes"
+
+@inherits FluxorComponent
+
+@inject IState<ProductAttributeState> ProductAttributeState
+@inject IDispatcher Dispatcher
+
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Thuộc tính sản phẩm</PageTitle>
+
+<RadzenCard>
+    <RadzenStack Orientation="Orientation.Horizontal"
+                 AlignItems="AlignItems.Center"
+                 JustifyContent="JustifyContent.SpaceBetween"
+                 Gap="1">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1">
+            <RadzenButton Text="Thêm mới"
+                          ButtonStyle="ButtonStyle.Success"
+                          Variant="Variant.Flat"
+                          Click="@(() => NavigationManager.NavigateTo("/catalog/product-attributes/create"))" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     Gap="0">
+            <RadzenTextBox @bind-Value="searchQuery"
+                           Placeholder="Nhập tên thuộc tính" />
+            <RadzenButton Text="Tìm kiếm"
+                          Variant="Variant.Flat"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@(() => Dispatcher.Dispatch(new SearchCategoriesAction(searchQuery)))" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+
+<RadzenDataGrid Data="@filterAttributes"
+                IsLoading="@ProductAttributeState.Value.IsLoading"
+                Page="@OnPageChange"
+                AllowPaging="true"
+                PageSize="5"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(ProductAttributeResponse.Name)" Title="Tên thuộc tính" Filterable="false" Width="160px" />
+        <RadzenDataGridColumn Title="Hành động" Frozen="true" Filterable="false" Sortable="false">
+            <Template Context="attribute">
+                <RadzenButton Text="Sửa" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Click="@(() => NavigationManager.NavigateTo($"/catalog/product-attributes/{attribute.Id}/edit"))" />
+                <RadzenButton Text="Xóa" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Click="@(() => ShowDeleteDialog(attribute))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+
+
+@code {
+    int currentPage = 1;
+    string searchQuery = string.Empty;
+    IEnumerable<ProductAttributeResponse> filterAttributes =>
+        ProductAttributeState.Value.ProductAttributes
+            .Where(c => c.Name.Contains(ProductAttributeState.Value.SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+
+    protected override void OnInitialized()
+    {
+        if (!ProductAttributeState.Value.ProductAttributes.Any())
+        {
+            Dispatcher.Dispatch(new FetchProductAttributesAction());
+        }
+
+        Dispatcher.Dispatch(new SetBreadcrumbAction(new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Trang chủ", "/"),
+            new BreadcrumbItem("Thuộc tính sản phẩm", "")
+        }));
+
+        base.OnInitialized();
+    }
+
+    async Task ShowDeleteDialog(ProductAttributeResponse productAttribute)
+    {
+        var ok = await DialogService.Confirm("Bạn có chắc muốn xoá thuộc tính này không?", "Xoá thuộc tính", new()
+            {
+                OkButtonText = "Ok",
+                CancelButtonText = "Huỷ"
+            });
+
+        if (ok == true)
+        {
+            Dispatcher.Dispatch(new DeleteProductAttributeAction(productAttribute.Id));
+        }
+    }
+
+    private void OnPageChange(PagerEventArgs args)
+    {
+        currentPage = args.PageIndex;
+    }
+}

@@ -1,0 +1,64 @@
+﻿@page "/catalog/product-attributes/{Id:guid}/edit"
+
+@inherits FluxorComponent
+
+@inject IProductAttributeService ProductAttributeService
+@inject IDispatcher Dispatcher
+@inject IState<ProductAttributeState> ProductAttributeState
+@inject NavigationManager NavigationManager
+
+<PageTitle>Cập nhật thuộc tính sản phẩm</PageTitle>
+
+<RadzenTemplateForm Data="@model" Submit="@((UpdateProductAttributeRequest request) => HandleValidSubmit(request))">
+    <RadzenStack Gap="8">
+        <RadzenStack>
+            <RadzenFormField Text="Tên danh mục" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                <ChildContent>
+                    <RadzenTextBox Name="Name" @bind-Value="@model.NewName" />
+                </ChildContent>
+                <Helper>
+                    <RadzenRequiredValidator Component="Name" Text="Tên danh mục không được để trống." />
+                </Helper>
+            </RadzenFormField>
+
+        </RadzenStack>
+        <RadzenStack>
+            <RadzenButton ButtonType="ButtonType.Submit" Variant="Variant.Flat" Text="Lưu thay đổi" Disabled="@ProductAttributeState.Value.IsUpdating" />
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Text="Thoát" Click="@(() => NavigationManager.NavigateTo("/catalog/product-attributes"))" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private UpdateProductAttributeRequest model = new();
+
+    protected override void OnInitialized()
+    {
+        Dispatcher.Dispatch(new SetBreadcrumbAction(new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Trang chủ", "/"),
+            new BreadcrumbItem("Thuộc tính sản phẩm", "/catalog/product-attributes"),
+            new BreadcrumbItem("Cập nhật thuộc tính sản phẩm", "")
+        }));
+
+        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var attribute = ProductAttributeState.Value.ProductAttributes.FirstOrDefault(c => c.Id == Id);
+        if (attribute != null)
+        {
+            model.NewName = attribute.Name;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void HandleValidSubmit(UpdateProductAttributeRequest request)
+    {
+        Dispatcher.Dispatch(new UpdateProductAttributeAction(Id, request));
+    }
+}

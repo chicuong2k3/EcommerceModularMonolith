@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+
+  seq:
+    image: datalust/seq:latest
+
+  pgadmin:
+    image: dpage/pgadmin4
+
+  database:
+    image: postgres:latest
+
+  redis:
+    image: redis:latest
+
+  rabbitmq:
+    image: rabbitmq:management
+
+  
+  ecommerce.api:
+    image: ${DOCKER_REGISTRY-}ecommerceapi
+    build:
+      context: .
+      dockerfile: Ecommerce.Api/Dockerfile
+
+volumes:
+  portainer_data:
+  seq_data:
+  database_data:
+  pgadmin_data:
+
+
+
+
+

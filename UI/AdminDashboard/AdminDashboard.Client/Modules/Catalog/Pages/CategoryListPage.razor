@@ -1,0 +1,101 @@
+﻿@page "/catalog/categories"
+@inherits FluxorComponent
+
+@inject IState<CategoryState> CategoryState
+@inject IDispatcher Dispatcher
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Danh mục</PageTitle>
+
+
+
+<RadzenCard>
+    <RadzenStack Orientation="Orientation.Horizontal"
+                 AlignItems="AlignItems.Center"
+                 JustifyContent="JustifyContent.SpaceBetween"
+                 Gap="1">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1">
+            <RadzenButton Text="Thêm mới"
+                          ButtonStyle="ButtonStyle.Success"
+                          Variant="Variant.Flat"
+                          Click="@(() => NavigationManager.NavigateTo("/catalog/categories/create"))" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     Gap="0">
+            <RadzenTextBox @bind-Value="searchQuery"
+                           Placeholder="Nhập tên danh mục" />
+            <RadzenButton Text="Tìm kiếm"
+                          Variant="Variant.Flat"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@(() => Dispatcher.Dispatch(new SearchCategoriesAction(searchQuery)))" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+
+<RadzenDataGrid Data="@filteredCategories"
+                IsLoading="@CategoryState.Value.IsLoading"
+                Page="@OnPageChange"
+                AllowPaging="true"
+                PageSize="5"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(CategoryResponse.Name)" Title="Tên danh mục" Filterable="false" Width="160px" />
+        <RadzenDataGridColumn Title="Hành động" Frozen="true" Filterable="false" Sortable="false">
+            <Template Context="category">
+                <RadzenButton Text="Sửa" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Click="@(() => NavigationManager.NavigateTo($"/catalog/categories/{category.Id}/edit"))" />
+                <RadzenButton Text="Xóa" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Click="@(() => ShowDeleteDialog(category))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+
+
+@code {
+    int currentPage = 1;
+    string searchQuery = string.Empty;
+    IEnumerable<CategoryResponse> filteredCategories =>
+        CategoryState.Value.Categories
+            .Where(c => c.Name.Contains(CategoryState.Value.SearchQuery, StringComparison.OrdinalIgnoreCase));
+
+
+    protected override void OnInitialized()
+    {
+        if (!CategoryState.Value.Categories.Any())
+        {
+            Dispatcher.Dispatch(new FetchCategoriesAction());
+        }
+
+        Dispatcher.Dispatch(new SetBreadcrumbAction(new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Trang chủ", "/"),
+            new BreadcrumbItem("Danh mục", "")
+        }));
+
+        base.OnInitialized();
+    }
+
+    async Task ShowDeleteDialog(CategoryResponse category)
+    {
+        var ok = await DialogService.Confirm("Bạn có chắc muốn xoá danh mục này không?", "Xoá danh mục", new()
+            {
+                OkButtonText = "Ok",
+                CancelButtonText = "Huỷ"
+            });
+
+        if (ok == true)
+        {
+            Dispatcher.Dispatch(new DeleteCategoryAction(category.Id));
+        }
+    }
+
+
+    private void OnPageChange(PagerEventArgs args)
+    {
+        currentPage = args.PageIndex;
+    }
+}
