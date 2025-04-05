@@ -1,4 +1,6 @@
 ﻿using Catalog.Domain.ProductAggregate.Events;
+using System;
+using System.Text;
 
 namespace Catalog.Domain.ProductAggregate;
 
@@ -37,12 +39,24 @@ public sealed class Product : AggregateRoot
         if (string.IsNullOrWhiteSpace(name))
             return Result.Fail(new ValidationError("Name is required."));
 
-        return Result.Ok(new Product(name, description, categoryId));
+        var product = new Product(name, description, categoryId);
+
+        product.Raise(new ProductCreated(product.Id, product.Name));
+
+        return Result.Ok(product);
     }
 
-    public void AddVariant(ProductVariant variant)
+    public void AddVariant(ProductVariant variant, Dictionary<string, string> attributes)
     {
         variants.Add(variant);
+        Raise(new ProductVariantAdded(
+            Id,
+            variant.Id,
+            variant.OriginalPrice,
+            variant.SalePrice?.Amount,
+            variant.Quantity,
+            variant.Image?.Url,
+            attributes));
     }
 
     public Result RemoveVariant(string sku)

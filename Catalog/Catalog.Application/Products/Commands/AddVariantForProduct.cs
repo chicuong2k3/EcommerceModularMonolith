@@ -82,7 +82,7 @@ internal sealed class AddVariantForProductHandler(
         }
 
 
-        product.AddVariant(variant);
+        product.AddVariant(variant, command.Attributes.ToDictionary(kvp => kvp.AttributeName, kvp => kvp.Value));
 
         await productRepository.SaveChangesAsync(cancellationToken);
         return Result.Ok();

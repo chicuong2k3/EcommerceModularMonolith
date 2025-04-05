@@ -27,7 +27,7 @@ internal class GetCheckoutDetailsHandler(
         //var discount = string.IsNullOrEmpty(query.CouponCode)
         //    ? 0
         //    : await couponService.ApplyCouponAsync(query.CouponCode, query.CartItems);
-        var subTotal = cartItems.Sum(item => item.SalePrice * item.Quantity);
+        //var subTotal = cartItems.Sum(item => item.SalePrice * item.Quantity);
         //var totalAmount = subTotal + shippingFee - discount;
 
         return Result.Ok(new CheckoutDetailsReadModel

@@ -5,7 +5,7 @@ using Ordering.Contracts;
 namespace Catalog.Application.EventHandlers.IntegrationEvents;
 
 public class UpdateProductQuantityOnOrderPlaced
-    : IConsumer<OrderPlacedIntegrationEvent>
+    : IntegrationEventHandler<OrderPlacedIntegrationEvent>
 {
     private readonly ILogger<UpdateProductQuantityOnOrderPlaced> logger;
     private readonly IMediator mediator;
@@ -17,9 +17,9 @@ public class UpdateProductQuantityOnOrderPlaced
         this.mediator = mediator;
     }
 
-    public async Task Consume(ConsumeContext<OrderPlacedIntegrationEvent> context)
+    public override async Task Handle(OrderPlacedIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
     {
-        foreach (var item in context.Message.OrderItems)
+        foreach (var item in integrationEvent.OrderItems)
         {
             var result = await mediator.Send(new UpdateQuantity(
                 item.ProductId,

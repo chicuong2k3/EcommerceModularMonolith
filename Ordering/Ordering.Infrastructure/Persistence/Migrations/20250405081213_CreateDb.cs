@@ -69,6 +69,19 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Products",
+                schema: "ordering",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CartItems",
                 schema: "ordering",
                 columns: table => new
@@ -76,8 +89,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductVariantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    OriginalPrice = table.Column<decimal>(type: "numeric", nullable: false),
-                    SalePrice = table.Column<decimal>(type: "numeric", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     CartId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
@@ -118,6 +129,31 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ProductVariants",
+                schema: "ordering",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OriginalPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    ImageUrl = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    SalePrice = table.Column<decimal>(type: "numeric", nullable: true),
+                    AttributesDescription = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalSchema: "ordering",
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_CartItems_CartId",
                 schema: "ordering",
@@ -129,6 +165,12 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                 schema: "ordering",
                 table: "OrderItems",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariants_ProductId",
+                schema: "ordering",
+                table: "ProductVariants",
+                column: "ProductId");
         }
 
         /// <inheritdoc />
@@ -147,11 +189,19 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                 schema: "ordering");
 
             migrationBuilder.DropTable(
+                name: "ProductVariants",
+                schema: "ordering");
+
+            migrationBuilder.DropTable(
                 name: "Carts",
                 schema: "ordering");
 
             migrationBuilder.DropTable(
                 name: "Orders",
+                schema: "ordering");
+
+            migrationBuilder.DropTable(
+                name: "Products",
                 schema: "ordering");
         }
     }

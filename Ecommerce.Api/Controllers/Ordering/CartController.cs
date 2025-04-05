@@ -32,8 +32,6 @@ public class CartController : ControllerBase
         var result = await mediator.Send(new AddItemToCart(ownerId, request.Items.Select(i => new AddItemDto(
             i.ProductId,
             i.ProductVariantId,
-            i.OriginalPrice,
-            i.SalePrice,
             i.Quantity)).ToList()));
         return result.ToActionResult();
     }

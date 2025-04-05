@@ -12,8 +12,8 @@ using Ordering.Infrastructure.Persistence;
 namespace Ordering.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(OrderingDbContext))]
-    [Migration("20250403091403_CreateDb")]
-    partial class CreateDb
+    [Migration("20250405143240_AddInboxboxMessages")]
+    partial class AddInboxboxMessages
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,6 +25,50 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Common.Infrastructure.Inbox.InboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InboxMessages", "ordering");
+                });
+
+            modelBuilder.Entity("Common.Infrastructure.Inbox.InboxMessageConsumer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InboxMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InboxMessageConsumers", "ordering");
+                });
 
             modelBuilder.Entity("Common.Infrastructure.Outbox.OutboxMessage", b =>
                 {
@@ -49,6 +93,25 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OutboxMessages", "ordering");
+                });
+
+            modelBuilder.Entity("Common.Infrastructure.Outbox.OutboxMessageConsumer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OutboxMessageConsumers", "ordering");
                 });
 
             modelBuilder.Entity("Ordering.Domain.CartAggregate.Cart", b =>
@@ -135,52 +198,60 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     b.ToTable("OrderItems", "ordering");
                 });
 
+            modelBuilder.Entity("Ordering.Domain.ProductAggregate.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Products", "ordering");
+                });
+
+            modelBuilder.Entity("Ordering.Domain.ProductAggregate.ProductVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttributesDescription")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal>("OriginalPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("SalePrice")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductVariants", "ordering");
+                });
+
             modelBuilder.Entity("Ordering.Domain.CartAggregate.CartItem", b =>
                 {
                     b.HasOne("Ordering.Domain.CartAggregate.Cart", null)
                         .WithMany("Items")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.OwnsOne("Common.Domain.Money", "OriginalPrice", b1 =>
-                        {
-                            b1.Property<Guid>("CartItemId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("numeric")
-                                .HasColumnName("OriginalPrice");
-
-                            b1.HasKey("CartItemId");
-
-                            b1.ToTable("CartItems", "ordering");
-
-                            b1.WithOwner()
-                                .HasForeignKey("CartItemId");
-                        });
-
-                    b.OwnsOne("Common.Domain.Money", "SalePrice", b1 =>
-                        {
-                            b1.Property<Guid>("CartItemId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("numeric")
-                                .HasColumnName("SalePrice");
-
-                            b1.HasKey("CartItemId");
-
-                            b1.ToTable("CartItems", "ordering");
-
-                            b1.WithOwner()
-                                .HasForeignKey("CartItemId");
-                        });
-
-                    b.Navigation("OriginalPrice")
-                        .IsRequired();
-
-                    b.Navigation("SalePrice")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ordering.Domain.OrderAggregate.Order", b =>
@@ -377,6 +448,14 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ordering.Domain.ProductAggregate.ProductVariant", b =>
+                {
+                    b.HasOne("Ordering.Domain.ProductAggregate.Product", null)
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Ordering.Domain.CartAggregate.Cart", b =>
                 {
                     b.Navigation("Items");
@@ -385,6 +464,11 @@ namespace Ordering.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Ordering.Domain.OrderAggregate.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Ordering.Domain.ProductAggregate.Product", b =>
+                {
+                    b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
         }

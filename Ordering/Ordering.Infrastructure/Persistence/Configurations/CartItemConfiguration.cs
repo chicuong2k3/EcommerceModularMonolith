@@ -14,19 +14,5 @@ internal sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
             .IsRequired();
         builder.Property(x => x.ProductVariantId)
             .IsRequired();
-
-        builder.OwnsOne(x => x.OriginalPrice, originalPrice =>
-        {
-            originalPrice.Property(x => x.Amount)
-                .HasColumnName("OriginalPrice")
-                .IsRequired();
-        });
-
-        builder.OwnsOne(x => x.SalePrice, salePrice =>
-        {
-            salePrice.Property(x => x.Amount)
-                .HasColumnName("SalePrice")
-                .IsRequired();
-        });
     }
 }

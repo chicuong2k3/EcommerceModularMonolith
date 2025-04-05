@@ -23,10 +23,9 @@ public class Cart : AggregateRoot
         Items = new List<CartItem>();
     }
 
-    public async Task<Result> AddItemAsync(Guid productId,
+    public async Task<Result> AddItemAsync(
+                        Guid productId,
                         Guid productVariantId,
-                        Money originalPrice,
-                        Money salePrice,
                         int quantity,
                         IProductService productService)
     {
@@ -39,7 +38,7 @@ public class Cart : AggregateRoot
 
         if (productAvailabilityResult.IsFailed)
         {
-            return Result.Fail(new NotFoundError($"Product variant with id '{productVariantId}' is not available"));
+            return Result.Fail(productAvailabilityResult.Errors);
         }
 
         var existingItem = Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);
@@ -52,7 +51,7 @@ public class Cart : AggregateRoot
         }
         else
         {
-            Items.Add(new CartItem(productId, productVariantId, originalPrice, salePrice, quantity));
+            Items.Add(new CartItem(productId, productVariantId, quantity));
         }
 
         return result;

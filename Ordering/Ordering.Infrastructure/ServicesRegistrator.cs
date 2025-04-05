@@ -1,5 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Catalog.Contracts;
+using Common.Infrastructure.Inbox;
+using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Ordering.Application.EventHandlers.IntegrationEvents;
+using Ordering.Domain.ProductAggregate;
+using Ordering.Infrastructure.Persistence;
 using Ordering.Infrastructure.Persistence.Repositories;
 using Ordering.Infrastructure.Services;
 
@@ -12,8 +18,9 @@ public static class ServicesRegistrator
         services.AddScoped<ICartRepository, CartRepository>();
         services.Decorate<ICartRepository, CachedCartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
 
-        services.AddScoped<IProductService, ProuductService>();
+        services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICouponService, CouponClient>();
 
         services.AddHttpClient("PromotionService", client =>
@@ -23,5 +30,11 @@ public static class ServicesRegistrator
             client.BaseAddress = new Uri(uri);
         });
 
+    }
+
+    public static void ConfigureConsumers(this IRegistrationConfigurator registrationConfiguration)
+    {
+        registrationConfiguration.AddConsumer<IntegrationEventsToInboxMessagesConverter<ProductCreatedIntegrationEvent, OrderingDbContext>>();
+        registrationConfiguration.AddConsumer<IntegrationEventsToInboxMessagesConverter<ProductVariantAddedIntegrationEvent, OrderingDbContext>>();
     }
 }

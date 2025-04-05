@@ -1,4 +1,6 @@
 ﻿using Common.Application;
+using Common.Domain;
+using Common.Infrastructure.Inbox;
 using Common.Infrastructure.Messaging;
 using Common.Infrastructure.Outbox;
 using MassTransit;
@@ -6,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Quartz;
 using System.Data;
@@ -29,13 +32,21 @@ public static class ServicesRegistrator
             configure.AddOpenBehavior(typeof(RequestLoggingPipelineBehavior<,>));
         });
 
-        // Persistence & Outbox
+        // Register Event Handlers
+        services.AddDomainEventHandlers(assemblies, dbContextTypes);
+        services.AddIntegrationEventHandlers(assemblies, dbContextTypes);
+
+        // Persistence & Outbox & Inbox
         var dbConnectionString = configuration.GetConnectionString("Database") ?? throw new InvalidOperationException("'Database' connection string cannot be null or empty.");
 
         services.AddSingleton<DomainEventsToOutboxMessagesInterceptor>();
         var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies()
                                   .Where(a => a.FullName != null && a.FullName.Contains("Domain"));
-        EventTypeRegistry.RegisterAllDomainEvents(domainAssemblies);
+        DomainEventTypeRegistry.RegisterAllDomainEvents(domainAssemblies);
+
+        var contractsAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                                  .Where(a => a.FullName != null && a.FullName.Contains("Contracts"));
+        IntegrationEventTypeRegistry.RegisterAllIntegrationEvents(contractsAssemblies);
 
         var addDbContextMethod = typeof(EntityFrameworkServiceCollectionExtensions)
             .GetMethods(BindingFlags.Static | BindingFlags.Public)
@@ -74,20 +85,51 @@ public static class ServicesRegistrator
             };
             genericAddDbContext.Invoke(null, invokeParams);
 
-
-            var jobType = typeof(ProcessOutboxMessagesJob<>).MakeGenericType(dbContextType);
-            var jobKey = new JobKey(jobType.Name);
+            // Outbox
+            var outboxJobType = typeof(ProcessOutboxMessagesJob<>).MakeGenericType(dbContextType);
+            var outboxJobKey = new JobKey(outboxJobType.FullName ?? $"ProcessOutboxMessagesJob_{Guid.NewGuid()}");
 
             services.AddQuartz(configure =>
             {
-                configure.AddJob(jobType, jobKey, jobBuilder => jobBuilder.StoreDurably())
-                        .AddTrigger(trigger => trigger.ForJob(jobKey)
+                configure.AddJob(outboxJobType, outboxJobKey, jobBuilder => jobBuilder.StoreDurably())
+                        .AddTrigger(trigger => trigger.ForJob(outboxJobKey)
                             .WithSimpleSchedule(schedule => schedule
                                 .WithIntervalInSeconds(10)
                                 .RepeatForever()));
 
             });
 
+            services.AddScoped(outboxJobType, provider =>
+            {
+                var dbContext = provider.GetRequiredService(dbContextType);
+                var loggerType = typeof(ILogger<>).MakeGenericType(outboxJobType);
+                var logger = provider.GetRequiredService(loggerType);
+                return Activator.CreateInstance(outboxJobType, dbContext, provider, assemblies, logger)
+                    ?? throw new InvalidOperationException($"Failed to create instance of {outboxJobType.FullName}");
+            });
+
+            // Inbox
+            var inboxJobType = typeof(ProcessInboxMessagesJob<>).MakeGenericType(dbContextType);
+            var inboxJobKey = new JobKey(inboxJobType.FullName ?? $"ProcessInboxMessagesJob_{Guid.NewGuid()}");
+
+            services.AddQuartz(configure =>
+            {
+                configure.AddJob(inboxJobType, inboxJobKey, jobBuilder => jobBuilder.StoreDurably())
+                        .AddTrigger(trigger => trigger.ForJob(inboxJobKey)
+                            .WithSimpleSchedule(schedule => schedule
+                                .WithIntervalInSeconds(10)
+                                .RepeatForever()));
+
+            });
+
+            services.AddScoped(inboxJobType, provider =>
+            {
+                var dbContext = provider.GetRequiredService(dbContextType);
+                var loggerType = typeof(ILogger<>).MakeGenericType(inboxJobType);
+                var logger = provider.GetRequiredService(loggerType);
+                return Activator.CreateInstance(inboxJobType, dbContext, provider, assemblies, logger)
+                    ?? throw new InvalidOperationException($"Failed to create instance of {inboxJobType.FullName}");
+            });
         }
 
         services.AddQuartzHostedService();
@@ -128,5 +170,87 @@ public static class ServicesRegistrator
             }
         });
 
+    }
+
+    private static void AddDomainEventHandlers(
+        this IServiceCollection services,
+        Assembly[] assemblies,
+        params Type[] dbContextTypes)
+    {
+        foreach (var assembly in assemblies)
+        {
+            var domainEventHandlerTypes = assembly
+                .GetTypes()
+                .Where(type => type.IsAssignableTo(typeof(IDomainEventHandler)))
+                .ToList();
+
+            foreach (var handlerType in domainEventHandlerTypes)
+            {
+
+                var interfaceType = handlerType
+                    .GetInterfaces()
+                    .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>));
+
+                if (interfaceType == null)
+                    continue;
+
+                var dbContextType = ResolveDbContextForHandler(handlerType, dbContextTypes);
+
+                if (dbContextType != null)
+                {
+                    var eventType = interfaceType.GetGenericArguments().Single();
+                    var idempotentHandlerType = typeof(IdempotentDomainEventHandler<,>)
+                        .MakeGenericType(eventType, dbContextType);
+
+                    services.TryAddScoped(interfaceType, handlerType);
+                    services.Decorate(interfaceType, idempotentHandlerType);
+                }
+            }
+        }
+    }
+
+    private static void AddIntegrationEventHandlers(
+        this IServiceCollection services,
+        Assembly[] assemblies,
+        params Type[] dbContextTypes)
+    {
+        foreach (var assembly in assemblies)
+        {
+            var integrationEventHandlerTypes = assembly
+                .GetTypes()
+                .Where(type => type.IsAssignableTo(typeof(IIntegrationEventHandler)))
+                .ToList();
+
+            foreach (var handlerType in integrationEventHandlerTypes)
+            {
+
+                var interfaceType = handlerType
+                    .GetInterfaces()
+                    .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>));
+
+                if (interfaceType == null)
+                    continue;
+
+                var dbContextType = ResolveDbContextForHandler(handlerType, dbContextTypes);
+
+                if (dbContextType != null)
+                {
+                    var eventType = interfaceType.GetGenericArguments().Single();
+                    var idempotentHandlerType = typeof(IdempotentIntegratonEventHandler<,>)
+                        .MakeGenericType(eventType, dbContextType);
+
+                    services.TryAddScoped(interfaceType, handlerType);
+                    services.Decorate(interfaceType, idempotentHandlerType);
+                }
+            }
+        }
+    }
+
+    private static Type? ResolveDbContextForHandler(Type handlerType, Type[] dbContextTypes)
+    {
+        var ns = handlerType.Namespace ?? string.Empty;
+        var moduleName = ns.Split('.')[0];
+
+        return dbContextTypes.FirstOrDefault(db => db.Namespace?.Contains(moduleName) == true);
     }
 }

@@ -22,7 +22,8 @@ AspNetCoreResult.Setup(config => config.DefaultProfile = new CustomAspNetCoreRes
 builder.Services.RegisterCommonServices(
     builder.Configuration,
     [
-        Catalog.Infrastructure.ServicesRegistrator.ConfigureConsumers
+        Catalog.Infrastructure.ServicesRegistrator.ConfigureConsumers,
+        Ordering.Infrastructure.ServicesRegistrator.ConfigureConsumers,
     ],
     [
         Catalog.Application.AssemblyInfo.Ref,

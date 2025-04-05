@@ -1,9 +1,9 @@
 ﻿using Ordering.Contracts;
 using Ordering.Domain.OrderAggregate.Events;
 
-namespace Ordering.Application.EventHandlers;
+namespace Ordering.Application.EventHandlers.DomainEvents;
 
-internal class PublishEventOnOrderPlaced : IDomainEventHandler<OrderPlaced>
+internal class PublishEventOnOrderPlaced : DomainEventHandler<OrderPlaced>
 {
     private readonly ILogger<PublishEventOnOrderPlaced> logger;
     private readonly IEventBus eventBus;
@@ -16,13 +16,13 @@ internal class PublishEventOnOrderPlaced : IDomainEventHandler<OrderPlaced>
         this.eventBus = eventBus;
     }
 
-    public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)
+    public override async Task Handle(OrderPlaced domainEvent, CancellationToken cancellationToken)
     {
         var orderPlacedEvent = new OrderPlacedIntegrationEvent
         (
-            notification.OrderId,
-            notification.CustomerId,
-            notification.OrderItems.Select(orderItem => new OrderItemMessage
+            domainEvent.OrderId,
+            domainEvent.CustomerId,
+            domainEvent.OrderItems.Select(orderItem => new OrderItemMessage
             (
                 orderItem.ProductId,
                 orderItem.ProductVariantId,

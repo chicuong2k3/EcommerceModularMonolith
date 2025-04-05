@@ -25,8 +25,6 @@ internal sealed class GetCartHandler(ICartRepository cartRepository)
                 Id = i.Id,
                 ProductId = i.ProductId,
                 ProductVariantId = i.ProductVariantId,
-                OriginalPrice = i.OriginalPrice,
-                SalePrice = i.SalePrice,
                 Quantity = i.Quantity
             }).ToList()
         });

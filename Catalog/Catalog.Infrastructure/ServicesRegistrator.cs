@@ -1,8 +1,11 @@
 ﻿using Catalog.Application.EventHandlers.IntegrationEvents;
+using Catalog.Infrastructure.Persistence;
 using Catalog.Infrastructure.Persistence.Repositories;
+using Common.Infrastructure.Inbox;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Ordering.Contracts;
 
 namespace Catalog.Infrastructure;
 
@@ -18,7 +21,9 @@ public static class ServicesRegistrator
 
     public static void ConfigureConsumers(this IRegistrationConfigurator registrationConfiguration)
     {
-        registrationConfiguration.AddConsumer<UpdateProductQuantityOnOrderPlaced>();
+        registrationConfiguration.AddConsumer<IntegrationEventsToInboxMessagesConverter<OrderPlacedIntegrationEvent, CatalogDbContext>>();
     }
+
+
 }
 

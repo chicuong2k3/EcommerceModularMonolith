@@ -8,8 +8,6 @@ public record AddItemToCart(Guid OwnerId,
 public record AddItemDto(
     Guid ProductId,
     Guid ProductVariantId,
-    decimal OriginalPrice,
-    decimal SalePrice,
     int Quantity);
 
 internal sealed class AddItemToCartHandler(
@@ -28,19 +26,9 @@ internal sealed class AddItemToCartHandler(
 
         foreach (var item in command.Items)
         {
-            var originalPriceCreationResult = Money.FromDecimal(item.OriginalPrice);
-            var salePriceCreationResult = Money.FromDecimal(item.SalePrice);
-
-            if (originalPriceCreationResult.IsFailed || salePriceCreationResult.IsFailed)
-            {
-                return Result.Fail(originalPriceCreationResult.Errors.Concat(salePriceCreationResult.Errors));
-            }
-
             var addItemResult = await cart.AddItemAsync(
                 item.ProductId,
                 item.ProductVariantId,
-                originalPriceCreationResult.Value,
-                salePriceCreationResult.Value,
                 item.Quantity,
                 productService);
 
@@ -61,8 +49,6 @@ internal sealed class AddItemToCartHandler(
                 Id = i.Id,
                 ProductId = i.ProductId,
                 ProductVariantId = i.ProductVariantId,
-                OriginalPrice = i.OriginalPrice,
-                SalePrice = i.SalePrice,
                 Quantity = i.Quantity
             }).ToList()
         });

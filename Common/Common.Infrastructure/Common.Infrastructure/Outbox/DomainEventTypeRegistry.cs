@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Common.Infrastructure.Outbox;
 
-public static class EventTypeRegistry
+public static class DomainEventTypeRegistry
 {
     private static readonly Dictionary<string, Type> EventTypes = new();
 

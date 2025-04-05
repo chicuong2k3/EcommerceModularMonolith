@@ -156,6 +156,50 @@ namespace Catalog.Infrastructure.Persistence.Migrations
                     b.ToTable("ProductAttributes", "catalog");
                 });
 
+            modelBuilder.Entity("Common.Infrastructure.Inbox.InboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OccurredOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InboxMessages", "catalog");
+                });
+
+            modelBuilder.Entity("Common.Infrastructure.Inbox.InboxMessageConsumer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InboxMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InboxMessageConsumers", "catalog");
+                });
+
             modelBuilder.Entity("Common.Infrastructure.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -179,6 +223,25 @@ namespace Catalog.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OutboxMessages", "catalog");
+                });
+
+            modelBuilder.Entity("Common.Infrastructure.Outbox.OutboxMessageConsumer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OutboxMessageConsumers", "catalog");
                 });
 
             modelBuilder.Entity("Catalog.Domain.CategoryAggregate.Category", b =>
@@ -248,7 +311,7 @@ namespace Catalog.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ProductVariantId");
                         });
 
-                    b.OwnsOne("Common.Domain.Money", "Price", b1 =>
+                    b.OwnsOne("Common.Domain.Money", "OriginalPrice", b1 =>
                         {
                             b1.Property<Guid>("ProductVariantId")
                                 .HasColumnType("uuid");
@@ -284,7 +347,7 @@ namespace Catalog.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Image");
 
-                    b.Navigation("Price")
+                    b.Navigation("OriginalPrice")
                         .IsRequired();
 
                     b.Navigation("SalePrice");

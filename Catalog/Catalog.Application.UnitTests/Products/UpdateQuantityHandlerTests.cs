@@ -26,7 +26,7 @@ public class UpdateQuantityHandlerTests
         var product = Product.Create("Laptop", "High-performance laptop", null).Value;
         var salePeriod = DateTimeRange.Create(DateTime.UtcNow, DateTime.UtcNow.AddDays(1)).Value;
         var variant = ProductVariant.Create("SKU123", Money.FromDecimal(100).Value, 5, null, Money.FromDecimal(80).Value, salePeriod).Value;
-        product.AddVariant(variant);
+        product.AddVariant(variant, new());
 
         productRepository.GetByIdWithVariantsAsync(product.Id, Arg.Any<CancellationToken>()).Returns(product);
 
@@ -84,7 +84,7 @@ public class UpdateQuantityHandlerTests
         var product = Product.Create("Laptop", "High-performance laptop", null).Value;
         var salePeriod = DateTimeRange.Create(DateTime.UtcNow, DateTime.UtcNow.AddDays(1)).Value;
         var variant = ProductVariant.Create("SKU123", Money.FromDecimal(100).Value, 5, null, Money.FromDecimal(80).Value, salePeriod).Value;
-        product.AddVariant(variant);
+        product.AddVariant(variant, new());
 
         productRepository
             .GetByIdWithVariantsAsync(product.Id, Arg.Any<CancellationToken>())

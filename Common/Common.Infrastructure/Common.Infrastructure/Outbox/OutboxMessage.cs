@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Common.Domain;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
 namespace Common.Infrastructure.Outbox;
@@ -26,10 +27,19 @@ public class OutboxMessage
         OccurredOn = DateTime.UtcNow;
     }
 
-    public object DeserializeContent()
+    public DomainEvent DeserializeContent()
     {
-        var eventType = EventTypeRegistry.Resolve(EventType);
-        return JsonSerializer.Deserialize(Content, eventType)
-               ?? throw new InvalidOperationException("Failed to deserialize outbox message content");
+        var eventType = DomainEventTypeRegistry.Resolve(EventType)
+            ?? throw new InvalidOperationException($"Event type '{EventType}' could not be resolved.");
+
+        if (!typeof(DomainEvent).IsAssignableFrom(eventType))
+        {
+            throw new InvalidOperationException($"Resolved type '{eventType.FullName}' does not inherit from DomainEvent.");
+        }
+
+        var deserializedEvent = JsonSerializer.Deserialize(Content, eventType)
+            ?? throw new InvalidOperationException($"Failed to deserialize content for event type '{EventType}'.");
+
+        return (DomainEvent)deserializedEvent;
     }
 }

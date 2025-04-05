@@ -6,8 +6,6 @@ public class CartItem : Entity
 {
     public Guid ProductId { get; private set; }
     public Guid ProductVariantId { get; private set; }
-    public Money OriginalPrice { get; private set; }
-    public Money SalePrice { get; private set; }
     public int Quantity { get; private set; }
 
     public CartItem()
@@ -19,15 +17,11 @@ public class CartItem : Entity
     internal CartItem(
         Guid productId,
         Guid productVariantId,
-        Money originalPrice,
-        Money salePrice,
         int quantity)
     {
         Id = Guid.NewGuid();
         ProductId = productId;
         ProductVariantId = productVariantId;
-        OriginalPrice = originalPrice;
-        SalePrice = salePrice;
         Quantity = quantity;
     }
 

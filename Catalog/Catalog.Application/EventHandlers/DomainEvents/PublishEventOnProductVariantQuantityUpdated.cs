@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Catalog.Application.EventHandlers.DomainEvents;
 
 internal class PublishEventOnProductVariantQuantityUpdated
-    : IDomainEventHandler<ProductVariantQuantityUpdated>
+    : DomainEventHandler<ProductVariantQuantityUpdated>
 {
     private readonly ILogger<PublishEventOnProductVariantQuantityUpdated> logger;
 
@@ -12,8 +12,8 @@ internal class PublishEventOnProductVariantQuantityUpdated
     {
         this.logger = logger;
     }
-    public async Task Handle(ProductVariantQuantityUpdated notification, CancellationToken cancellationToken)
+    public override async Task Handle(ProductVariantQuantityUpdated domainEvent, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Product variant quantity updated. ProductId: {ProductId}, ProductVariantId: {ProductVariantId}, NewQuantity: {NewQuantity}", notification.ProductId, notification.ProductVariantId, notification.NewQuantity);
+        logger.LogInformation("Product variant quantity updated. ProductId: {ProductId}, ProductVariantId: {ProductVariantId}, NewQuantity: {NewQuantity}", domainEvent.ProductId, domainEvent.ProductVariantId, domainEvent.NewQuantity);
     }
 }

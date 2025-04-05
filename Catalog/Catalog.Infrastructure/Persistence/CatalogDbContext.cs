@@ -1,4 +1,5 @@
-﻿using Common.Infrastructure.Outbox;
+﻿using Common.Infrastructure.Inbox;
+using Common.Infrastructure.Outbox;
 using Microsoft.Extensions.Logging;
 
 namespace Catalog.Infrastructure.Persistence;
@@ -27,7 +28,10 @@ public sealed class CatalogDbContext : DbContext
     public DbSet<Category> Categories { get; set; } = default!;
     public DbSet<Product> Products { get; set; } = default!;
     public DbSet<ProductAttribute> ProductAttributes { get; set; } = default!;
-    public DbSet<Review> Reviews { get; set; } = default!;
+    private DbSet<Review> Reviews { get; set; } = default!;
 
     private DbSet<OutboxMessage> OutboxMessages { get; set; }
+    private DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
+    private DbSet<InboxMessage> InboxMessages { get; set; }
+    private DbSet<InboxMessageConsumer> InboxMessageConsumers { get; set; }
 }
