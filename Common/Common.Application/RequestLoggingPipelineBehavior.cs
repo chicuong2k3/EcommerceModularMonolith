@@ -2,6 +2,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using System.Diagnostics;
 
 namespace Common.Application;
 
@@ -23,6 +24,9 @@ public class RequestLoggingPipelineBehavior<TRequest, TResponse>
     {
         var moduleName = typeof(TRequest).FullName?.Split('.').LastOrDefault();
         var requestName = typeof(TRequest).Name;
+
+        Activity.Current?.SetTag("request.module", moduleName);
+        Activity.Current?.SetTag("request.name", requestName);
 
         using (LogContext.PushProperty("Module", moduleName))
         {

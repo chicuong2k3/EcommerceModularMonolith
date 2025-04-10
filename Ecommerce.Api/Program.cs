@@ -8,10 +8,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Ordering.Infrastructure;
 using Ordering.Infrastructure.Persistence;
-using Promotion.Infrastructure;
-using Promotion.Infrastructure.Persistence;
 using Serilog;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,16 +24,13 @@ builder.Services.RegisterCommonServices(
     ],
     [
         Catalog.Application.AssemblyInfo.Ref,
-        Promotion.Application.AssemblyInfo.Ref,
         Ordering.Application.AssemblyInfo.Ref
     ],
     typeof(CatalogDbContext),
-    typeof(OrderingDbContext),
-    typeof(PromotionDbContext));
+    typeof(OrderingDbContext));
 
 builder.Services.RegisterCatalogServices(builder.Configuration);
 builder.Services.RegisterOrderingServices(builder.Configuration);
-builder.Services.RegisterPromotionServices(builder.Configuration);
 //builder.Services.RegisterPaymentServices(builder.Configuration);
 
 builder.Services.AddControllers();
@@ -50,7 +44,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.Services.MigratePromotionDatabase();
 await app.Services.MigrateCatalogDatabaseAsync();
 await app.Services.MigrateOrderingDatabaseAsync();
 
@@ -66,6 +59,13 @@ app.MapHealthChecks("/health", new HealthCheckOptions()
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
+app.UseLogContextTraceLogging();
+
 app.MapControllers();
 
 app.Run();
+
+
+public partial class Program
+{
+}

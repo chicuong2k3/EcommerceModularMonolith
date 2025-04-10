@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Quartz;
 using System.Data;
 using System.Reflection;
@@ -94,7 +96,7 @@ public static class ServicesRegistrator
                 configure.AddJob(outboxJobType, outboxJobKey, jobBuilder => jobBuilder.StoreDurably())
                         .AddTrigger(trigger => trigger.ForJob(outboxJobKey)
                             .WithSimpleSchedule(schedule => schedule
-                                .WithIntervalInSeconds(10)
+                                .WithIntervalInSeconds(5)
                                 .RepeatForever()));
 
             });
@@ -117,7 +119,7 @@ public static class ServicesRegistrator
                 configure.AddJob(inboxJobType, inboxJobKey, jobBuilder => jobBuilder.StoreDurably())
                         .AddTrigger(trigger => trigger.ForJob(inboxJobKey)
                             .WithSimpleSchedule(schedule => schedule
-                                .WithIntervalInSeconds(10)
+                                .WithIntervalInSeconds(5)
                                 .RepeatForever()));
 
             });
@@ -149,12 +151,10 @@ public static class ServicesRegistrator
         });
 
 
-        // Add Health Checks
-        services.AddHealthChecks()
-            .AddNpgSql(dbConnectionString)
-            .AddRedis(cacheConnectionString);
-
         // MassTransit
+
+        var rabbitMqHost = configuration["RabbitMq:Host"] ?? throw new ArgumentNullException("RabbitMq Host is not configured");
+
         services.TryAddSingleton<IEventBus, EventBus>();
         services.AddMassTransit(x =>
         {
@@ -162,13 +162,49 @@ public static class ServicesRegistrator
             {
                 cfg.ConfigureEndpoints(context);
             });
+
+            //var host = configuration["RabbitMq:Host"] ?? throw new ArgumentNullException("RabbitMq Host is not configured");
+            //var username = configuration["RabbitMq:Username"] ?? throw new ArgumentNullException("RabbitMq Username is not configured");
+            //var password = configuration["RabbitMq:Password"] ?? throw new ArgumentNullException("RabbitMq Password is not configured");
+            //x.UsingRabbitMq((context, cfg) =>
+            //{
+            //    cfg.Host(new Uri(host), h =>
+            //    {
+            //        h.Username(username);
+            //        h.Password(password);
+            //    });
+            //    cfg.ConfigureEndpoints(context);
+            //});
+
             x.SetKebabCaseEndpointNameFormatter();
 
+            //string instanceId = "ecommerce";
             foreach (var moduleConfigureConsumer in moduleConfigureConsumers)
             {
                 moduleConfigureConsumer(x);
             }
         });
+
+        // Add Health Checks
+        services.AddHealthChecks()
+            .AddNpgSql(dbConnectionString)
+            .AddRedis(cacheConnectionString);
+
+
+        // OpenTelemetry
+        services.AddOpenTelemetry()
+            .ConfigureResource(res => res.AddService("Ecommerce"))
+            .WithTracing(tracerProviderBuilder =>
+            {
+                tracerProviderBuilder
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation()
+                    .AddNpgsql()
+                    .AddRedisInstrumentation()
+                    .AddSource(MassTransit.Logging.DiagnosticHeaders.DefaultListenerName)
+                    .AddOtlpExporter();
+            });
 
     }
 

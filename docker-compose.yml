@@ -7,6 +7,9 @@ services:
   seq:
     image: datalust/seq:latest
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+
   pgadmin:
     image: dpage/pgadmin4
 
