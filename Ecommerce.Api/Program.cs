@@ -1,3 +1,4 @@
+using Billing.Infrastructure.Persistence;
 using Catalog.Infrastructure;
 using Catalog.Infrastructure.Persistence;
 using Common.Infrastructure;
@@ -21,13 +22,16 @@ builder.Services.RegisterCommonServices(
     [
         Catalog.Infrastructure.ServicesRegistrator.ConfigureConsumers,
         Ordering.Infrastructure.ServicesRegistrator.ConfigureConsumers,
+        Billing.Infrastructure.ServicesRegistrator.ConfigureConsumers
     ],
     [
         Catalog.Application.AssemblyInfo.Ref,
-        Ordering.Application.AssemblyInfo.Ref
+        Ordering.Application.AssemblyInfo.Ref,
+        Billing.Application.AssemblyInfo.Ref
     ],
     typeof(CatalogDbContext),
-    typeof(OrderingDbContext));
+    typeof(OrderingDbContext),
+    typeof(BillingDbContext));
 
 builder.Services.RegisterCatalogServices(builder.Configuration);
 builder.Services.RegisterOrderingServices(builder.Configuration);

@@ -1,4 +1,5 @@
 ﻿using Catalog.Application.Products.Commands;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Ordering.Contracts;
 
@@ -29,7 +30,7 @@ public class UpdateProductQuantityOnOrderPlaced
             if (result.IsFailed)
             {
                 logger.LogError("Failed to update product quantity on order placed event: {Errors}", result.Errors);
-                return;
+                throw new Exception("Product quantity update failed");
             }
         }
 

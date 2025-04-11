@@ -32,6 +32,10 @@ public class Order : AggregateRoot
         OrderDate = DateTime.UtcNow;
         items.AddRange(orderItems);
         Subtotal = items.Aggregate(Money.FromDecimal(0).Value, (sum, item) => sum + (item.SalePrice * item.Quantity));
+
+        Status = paymentInfo.PaymentMethod == PaymentMethod.COD
+                    ? OrderStatus.Processing
+                    : OrderStatus.PendingPayment;
     }
 
     public static Result<Order> Create(
@@ -40,42 +44,45 @@ public class Order : AggregateRoot
         ShippingInfo shippingInfo,
         List<OrderItem> orderItems)
     {
-        if (orderItems.Any(oi => oi.Quantity <= 0))
-            return Result.Fail(new ValidationError("Order item quantity must be greater than 0"));
+        if (!orderItems.Any())
+            return Result.Fail("Order must have at least one item");
 
         var order = new Order(customerId, paymentInfo, shippingInfo, orderItems);
+        order.Total = order.Subtotal + order.ShippingInfo.ShippingCosts;
 
         return Result.Ok(order);
     }
 
-    public Result Place(Money? discountAmount)
+    public void RaisePaymentEvent()
     {
-        if (!Items.Any())
-            return Result.Fail(new ValidationError("Order must have at least one item to be placed"));
-
-        if (discountAmount != null)
+        switch (PaymentInfo.PaymentMethod)
         {
-            Total = Subtotal - discountAmount;
+            case PaymentMethod.CreditCard:
+            case PaymentMethod.PayPal:
+                Raise(new OrderPlacedForOnlinePayment(
+                    Id,
+                    CustomerId,
+                    Total,
+                    PaymentInfo.PaymentMethod.ToString()));
+                break;
         }
-        else
-        {
-            Total = Subtotal;
-        }
+    }
 
-        Status = OrderStatus.Placed;
+    public Result MarkAsPaid()
+    {
+        if (Status != OrderStatus.PendingPayment)
+            return Result.Fail("Invalid order status");
 
-        Raise(new OrderPlaced(Id, CustomerId, Items));
+        Status = OrderStatus.Paid;
         return Result.Ok();
     }
 
-
     public Result StartProcessing()
     {
-        if (Status != OrderStatus.Placed)
-            return Result.Fail(new ValidationError("Order must be Placed before processing"));
+        if (Status != OrderStatus.PendingPayment && Status != OrderStatus.Paid)
+            return Result.Fail(new ValidationError("Invalid order status"));
 
         Status = OrderStatus.Processing;
-        //Raise(new OrderProcessingStarted(Id));
         return Result.Ok();
     }
 
@@ -95,14 +102,16 @@ public class Order : AggregateRoot
             return Result.Fail(new ValidationError("Order must be Shipped before delivery"));
 
         Status = OrderStatus.Delivered;
-        //Raise(new OrderDelivered(Id));
         return Result.Ok();
     }
 
     public Result Cancel()
     {
-        if (Status == OrderStatus.Shipped || Status == OrderStatus.Delivered || Status == OrderStatus.Refunded)
-            return Result.Fail(new ValidationError("Cannot cancel a shipped/delivered/refunded order"));
+        if (Status == OrderStatus.Shipped
+            || Status == OrderStatus.Delivered
+            || Status == OrderStatus.Canceled
+            || Status == OrderStatus.Refunded)
+            return Result.Fail(new ValidationError("Cannot cancel a shipped/delivered/canceled/refunded order"));
 
         Status = OrderStatus.Canceled;
         Raise(new OrderCanceled(Id));

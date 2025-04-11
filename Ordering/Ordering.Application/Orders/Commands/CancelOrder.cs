@@ -9,7 +9,7 @@ public class CancelOrderHandler(IOrderRepository orderRepository)
     {
         var order = await orderRepository.GetByIdAsync(command.OrderId);
         if (order == null)
-            return Result.Fail(new NotFoundError($"The order with id '{command.OrderId}' not found"));
+            return Result.Fail(new NotFoundError($"Order with id '{command.OrderId}' not found"));
 
         var result = order.Cancel();
 

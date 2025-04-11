@@ -27,6 +27,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Billing\Billing.ApiContracts\Billing.ApiContracts.csproj" />
+		<ProjectReference Include="..\Billing\Billing.Infrastructure\Billing.Infrastructure.csproj" />
 		<ProjectReference Include="..\Catalog\Catalog.ApiContracts\Catalog.ApiContracts.csproj" />
 		<ProjectReference Include="..\Catalog\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
 		<ProjectReference Include="..\Ordering\Ordering.ApiContracts\Ordering.ApiContracts.csproj" />

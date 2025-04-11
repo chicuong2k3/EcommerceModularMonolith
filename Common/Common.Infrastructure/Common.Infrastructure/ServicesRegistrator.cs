@@ -153,8 +153,6 @@ public static class ServicesRegistrator
 
         // MassTransit
 
-        var rabbitMqHost = configuration["RabbitMq:Host"] ?? throw new ArgumentNullException("RabbitMq Host is not configured");
-
         services.TryAddSingleton<IEventBus, EventBus>();
         services.AddMassTransit(x =>
         {

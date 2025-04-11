@@ -10,6 +10,6 @@ public class PlaceOrderRequest
     public string Country { get; set; }
     public string PaymentMethod { get; set; }
     public string ShippingMethod { get; set; }
-    public string? CouponCode { get; set; }
+    public string PhoneNumber { get; set; }
     public List<Guid> CartItemIds { get; set; }
 }

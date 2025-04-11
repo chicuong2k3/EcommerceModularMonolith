@@ -2,23 +2,20 @@
 
 public record PaymentInfo
 {
-    /// <summary>
-    /// The accepted payment options, such as VISA, Mastercard, or digital wallets.
-    /// </summary>
-    public string PaymentMethod { get; private set; }
+    public PaymentMethod PaymentMethod { get; private set; }
 
     private PaymentInfo() { }
 
-    private PaymentInfo(string paymentMethod)
+    private PaymentInfo(PaymentMethod paymentMethod)
     {
         PaymentMethod = paymentMethod;
     }
 
     public static Result<PaymentInfo> Create(string paymentMethod)
     {
-        if (string.IsNullOrWhiteSpace(paymentMethod))
-            return Result.Fail(new ValidationError("Payment method is required"));
+        if (!Enum.TryParse<PaymentMethod>(paymentMethod, out var parsedPaymentMethod))
+            return Result.Fail(new ValidationError("Invalid payment method"));
 
-        return Result.Ok(new PaymentInfo(paymentMethod));
+        return Result.Ok(new PaymentInfo(parsedPaymentMethod));
     }
 }

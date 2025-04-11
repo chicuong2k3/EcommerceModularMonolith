@@ -116,9 +116,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
@@ -201,21 +198,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Products", "ordering");
-                });
-
-            modelBuilder.Entity("Ordering.Domain.ProductAggregate.ProductVariant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("AttributesDescription")
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
@@ -224,11 +206,13 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<decimal>("OriginalPrice")
                         .HasColumnType("numeric");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -236,11 +220,12 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     b.Property<decimal?>("SalePrice")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductVariants", "ordering");
+                    b.ToTable("Products", "ordering");
                 });
 
             modelBuilder.Entity("Ordering.Domain.CartAggregate.CartItem", b =>
@@ -445,14 +430,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Ordering.Domain.ProductAggregate.ProductVariant", b =>
-                {
-                    b.HasOne("Ordering.Domain.ProductAggregate.Product", null)
-                        .WithMany("Variants")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("Ordering.Domain.CartAggregate.Cart", b =>
                 {
                     b.Navigation("Items");
@@ -461,11 +438,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Ordering.Domain.OrderAggregate.Order", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Ordering.Domain.ProductAggregate.Product", b =>
-                {
-                    b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
         }

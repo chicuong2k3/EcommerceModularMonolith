@@ -26,10 +26,8 @@ public class OrderingDbContext : DbContext
     public DbSet<Cart> Carts { get; set; }
     private DbSet<CartItem> CartItems { get; set; }
     public DbSet<Product> Products { get; set; }
-    private DbSet<ProductVariant> ProductVariants { get; set; }
+
     private DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
-
-
     private DbSet<OutboxMessage> OutboxMessages { get; set; }
     private DbSet<InboxMessage> InboxMessages { get; set; }
     private DbSet<InboxMessageConsumer> InboxMessageConsumers { get; set; }

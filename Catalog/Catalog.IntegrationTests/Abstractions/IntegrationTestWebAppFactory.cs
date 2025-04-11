@@ -8,14 +8,14 @@ namespace Catalog.IntegrationTests.Abstractions;
 public class IntegrationTestWebAppFactory
     : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer dbContainer
-        = new PostgresSqlBuilder()
-            .WithImage("postgres")
-            .WithDatabase("ecommerce_test")
-            .WithUsername("postgres")
-            .WithPassword("postgres")
-            .WithCleanUp(true)
-            .Build();
+    //private readonly PostgreSqlContainer dbContainer
+    //    = new PostgresSqlBuilder()
+    //        .WithImage("postgres")
+    //        .WithDatabase("ecommerce_test")
+    //        .WithUsername("postgres")
+    //        .WithPassword("postgres")
+    //        .WithCleanUp(true)
+    //        .Build();
 
     private readonly RedisContainer redisContainer
         = new RedisBuilder()
@@ -25,7 +25,7 @@ public class IntegrationTestWebAppFactory
 
     public async Task InitializeAsync()
     {
-        await dbContainer.StartAsync();
+        //await dbContainer.StartAsync();
         await redisContainer.StartAsync();
     }
 
@@ -40,7 +40,7 @@ public class IntegrationTestWebAppFactory
 
     async Task IAsyncLifetime.DisposeAsync()
     {
-        await dbContainer.StopAsync();
-        await dbContainer.StopAsync();
+        //await dbContainer.StopAsync();
+        //await dbContainer.StopAsync();
     }
 }

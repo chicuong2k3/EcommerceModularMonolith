@@ -16,9 +16,10 @@ internal class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasMany(p => p.Variants)
-            .WithOne()
-            .HasForeignKey("ProductId")
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(p => p.ImageUrl)
+               .HasMaxLength(2000);
+
+        builder.Property(p => p.AttributesDescription)
+            .HasMaxLength(250);
     }
 }

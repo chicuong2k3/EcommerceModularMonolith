@@ -5,8 +5,7 @@ namespace Ordering.Application.Orders.Queries;
 public record GetCheckoutDetails(Guid CustomerId, string CouponCode) : ICommand<CheckoutDetailsReadModel>;
 
 internal class GetCheckoutDetailsHandler(
-    ICartRepository cartRepository,
-    ICouponService couponService)
+    ICartRepository cartRepository)
     : ICommandHandler<GetCheckoutDetails, CheckoutDetailsReadModel>
 {
     public async Task<Result<CheckoutDetailsReadModel>> Handle(GetCheckoutDetails query, CancellationToken cancellationToken)

@@ -33,9 +33,9 @@ public class OrdersController : Controller
                                                          request.District,
                                                          request.Province,
                                                          request.Country,
+                                                         request.PhoneNumber,
                                                          request.PaymentMethod,
-                                                         request.ShippingMethod,
-                                                         request.CouponCode));
+                                                         request.ShippingMethod));
 
         if (result.IsFailed)
             return result.ToActionResult();

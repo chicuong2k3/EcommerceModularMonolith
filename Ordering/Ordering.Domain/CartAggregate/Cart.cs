@@ -7,8 +7,6 @@ public class Cart : AggregateRoot
     [JsonInclude]
     public Guid OwnerId { get; private set; }
     [JsonInclude]
-    public DateTime CreatedAt { get; private set; }
-    [JsonInclude]
     public List<CartItem> Items { get; set; } = new();
 
     public Cart()
@@ -19,26 +17,17 @@ public class Cart : AggregateRoot
     {
         Id = Guid.NewGuid();
         OwnerId = ownerId;
-        CreatedAt = DateTime.UtcNow;
         Items = new List<CartItem>();
     }
 
     public async Task<Result> AddItemAsync(
                         Guid productId,
                         Guid productVariantId,
-                        int quantity,
-                        IProductService productService)
+                        int quantity)
     {
         if (quantity <= 0)
         {
             return Result.Fail(new ValidationError("Quantity must be greater than zero"));
-        }
-
-        var productAvailabilityResult = await productService.ValidateProductAvailabilityAsync(productId, productVariantId, quantity);
-
-        if (productAvailabilityResult.IsFailed)
-        {
-            return Result.Fail(productAvailabilityResult.Errors);
         }
 
         var existingItem = Items.FirstOrDefault(i => i.ProductVariantId == productVariantId);

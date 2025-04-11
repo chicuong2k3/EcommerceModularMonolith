@@ -1,6 +1,4 @@
 ﻿using Catalog.Domain.ProductAggregate.Events;
-using System;
-using System.Text;
 
 namespace Catalog.Domain.ProductAggregate;
 
@@ -51,6 +49,7 @@ public sealed class Product : AggregateRoot
         variants.Add(variant);
         Raise(new ProductVariantAdded(
             Id,
+            Name,
             variant.Id,
             variant.OriginalPrice,
             variant.SalePrice?.Amount,

@@ -54,4 +54,14 @@ public record Money
     }
 
     public static implicit operator decimal(Money money) => money.Amount;
+
+    public static bool operator >(Money left, Money right)
+    {
+        return left.Amount > right.Amount;
+    }
+
+    public static bool operator <(Money left, Money right)
+    {
+        return left.Amount < right.Amount;
+    }
 }

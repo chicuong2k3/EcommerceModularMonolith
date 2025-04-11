@@ -2,7 +2,7 @@
 
 public enum PaymentMethod
 {
-    CashOnDelivery,
+    COD,
     CreditCard,
     PayPal
 }

@@ -1,4 +1,7 @@
-﻿namespace Ordering.Application.Orders.Commands;
+using Ordering.Domain.OrderAggregate;
+using Ordering.Domain.OrderAggregate.Events;
+
+namespace Ordering.Application.Orders.Commands;
 
 public record PlaceOrder(
     Guid CustomerId,
@@ -7,100 +10,99 @@ public record PlaceOrder(
     string District,
     string Province,
     string Country,
+    string PhoneNumber,
     string PaymentMethod,
-    string ShippingMethod,
-    string? CouponCode) : ICommand<Order>;
+    string ShippingMethod) : ICommand<Order>;
 
-//internal sealed class PlaceOrderHandler(
-//    IOrderRepository orderRepository,
-//    ICartRepository cartRepository,
-//    ICouponService couponService)
-//    : ICommandHandler<PlaceOrder, Order>
-//{
-//    public async Task<Result<Order>> Handle(PlaceOrder command, CancellationToken cancellationToken)
-//    {
-//        if (!Enum.TryParse<PaymentMethod>(command.PaymentMethod, out var paymentMethod))
-//            return Result.Fail(new ValidationError("Invalid payment method"));
+internal sealed class PlaceOrderHandler(
+    IOrderRepository orderRepository,
+    ICartRepository cartRepository,
+    IProductRepository productRepository)
+    : ICommandHandler<PlaceOrder, Order>
+{
+    public async Task<Result<Order>> Handle(PlaceOrder command, CancellationToken cancellationToken)
+    {
+        // Get cart and validate items
+        var cart = await cartRepository.GetAsync(command.CustomerId, cancellationToken);
 
-//        var cart = await cartRepository.GetAsync(command.CustomerId, cancellationToken);
+        if (cart == null)
+            return Result.Fail(new NotFoundError("Cart not found"));
 
-//        if (cart == null)
-//            return Result.Fail(new NotFoundError("Cart not found"));
+        var cartItems = cart.Items.ToList();
 
-//        var cartItems = cart.Items.ToList();
+        if (!cartItems.Any())
+            return Result.Fail("There is no items in cart");
 
-//        if (!cartItems.Any())
-//            return Result.Fail("There is no items in cart");
+        // Create order items
+        var orderItems = new List<OrderItem>();
+        foreach (var item in cartItems)
+        {
+            var product = await productRepository.GetProductAsync(item.ProductId, item.ProductVariantId, cancellationToken);
 
-//        var orderItems = new List<OrderItem>();
+            if (product == null)
+                return Result.Fail(new NotFoundError($"Product with id '{item.ProductId}' not found"));
 
-//        var orderItemCreationResults = new List<Result<OrderItem>>();
-//        foreach (var item in cartItems)
-//        {
-//            // check item availability
+            // Check if the product is in stock
+            if (product.Quantity < item.Quantity)
+                return Result.Fail(new ValidationError($"Product '{product.Name}' is out of stock"));
 
-//            var orderItemCreationResult = OrderItem.Create(
-//                item.ProductId,
-//                item.ProductVariantId,
-//                item.Quantity);
+            var originalPrice = Money.FromDecimal(product.OriginalPrice).Value;
+            var salePrice = product.SalePrice != null
+                ? Money.FromDecimal(product.SalePrice.Value).Value : originalPrice;
 
-//            orderItemCreationResults.Add(orderItemCreationResult);
-//        }
+            var orderItemCreationResult = OrderItem.Create(
+                item.ProductId,
+                item.ProductVariantId,
+                product.Name,
+                item.Quantity,
+                originalPrice,
+                salePrice,
+                product.ImageUrl,
+                product.AttributesDescription);
 
-//        if (orderItemCreationResults.Any(r => r.IsFailed))
-//        {
-//            var errors = orderItemCreationResults
-//                .Where(r => r.IsFailed)
-//                .SelectMany(r => r.Errors)
-//                .ToList();
-//            return Result.Fail(errors);
-//        }
+            if (orderItemCreationResult.IsFailed)
+                return Result.Fail(orderItemCreationResult.Errors);
 
-//        orderItems.AddRange(orderItemCreationResults.Select(r => r.Value));
+            orderItems.Add(orderItemCreationResult.Value);
+        }
 
-//        var locationCreationResult = Location.Create(
-//                command.Street,
-//                command.Ward,
-//                command.District,
-//                command.Province,
-//                command.Country);
+        // Initialize order
+        var locationCreationResult = Location.Create(
+                command.Street,
+                command.Ward,
+                command.District,
+                command.Province,
+                command.Country);
+        if (locationCreationResult.IsFailed)
+            return Result.Fail(locationCreationResult.Errors);
+
+        // Create payment info
+        var paymentInfoCreationResult = PaymentInfo.Create(command.PaymentMethod);
+        if (paymentInfoCreationResult.IsFailed)
+            return Result.Fail(paymentInfoCreationResult.Errors);
+
+        // Create shipping info
+        var shippingInfoCreationResult = ShippingInfo.Create(Money.FromDecimal(0).Value, locationCreationResult.Value, command.PhoneNumber);
+        if (shippingInfoCreationResult.IsFailed)
+            return Result.Fail(shippingInfoCreationResult.Errors);
 
 
-//        var paymentInfoCreationResult = PaymentInfo.Create(command.PaymentMethod);
-//        if (paymentInfoCreationResult.IsFailed)
-//            return Result.Fail(paymentInfoCreationResult.Errors);
+        var orderCreationResult = Order.Create(
+            command.CustomerId,
+            paymentInfoCreationResult.Value,
+            shippingInfoCreationResult.Value,
+            orderItems);
 
-//        var shippingCosts = Money.FromDecimal(0).Value;
-//        if (locationCreationResult.IsFailed)
-//            return Result.Fail(locationCreationResult.Errors);
-//        var shippingInfo = new ShippingInfo(shippingCosts, locationCreationResult.Value);
+        if (orderCreationResult.IsFailed)
+            return orderCreationResult;
 
-//        var orderCreationResult = Order.Create(
-//            command.CustomerId,
-//            paymentInfoCreationResult.Value,
-//            shippingInfo,
-//            orderItems);
+        var order = orderCreationResult.Value;
 
-//        if (orderCreationResult.IsFailed)
-//            return orderCreationResult;
+        // notify payment service
+        order.RaisePaymentEvent();
 
-//        var order = orderCreationResult.Value;
+        await orderRepository.AddAsync(order, cancellationToken);
 
-//        Money? discountAmount = null;
-//        if (!string.IsNullOrWhiteSpace(command.CouponCode))
-//        {
-//            var orderDetails = new OrderDetails(
-//                order.Subtotal
-//            );
-//            discountAmount = await couponService.ApplyCouponAsync(orderDetails, cancellationToken);
-//        }
-
-//        var placeOrderResult = order.Place(discountAmount);
-//        if (placeOrderResult.IsFailed)
-//            return placeOrderResult;
-
-//        await orderRepository.AddAsync(order, cancellationToken);
-
-//        return Result.Ok(order);
-//    }
-//}
+        return Result.Ok(order);
+    }
+}

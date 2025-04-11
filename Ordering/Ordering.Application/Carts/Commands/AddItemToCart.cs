@@ -11,8 +11,7 @@ public record AddItemDto(
     int Quantity);
 
 internal sealed class AddItemToCartHandler(
-    ICartRepository cartRepository,
-    IProductService productService)
+    ICartRepository cartRepository)
     : ICommandHandler<AddItemToCart, CartReadModel>
 {
     public async Task<Result<CartReadModel>> Handle(AddItemToCart command, CancellationToken cancellationToken)
@@ -29,8 +28,7 @@ internal sealed class AddItemToCartHandler(
             var addItemResult = await cart.AddItemAsync(
                 item.ProductId,
                 item.ProductVariantId,
-                item.Quantity,
-                productService);
+                item.Quantity);
 
             if (addItemResult.IsFailed)
             {

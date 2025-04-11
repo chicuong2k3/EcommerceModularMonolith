@@ -17,11 +17,10 @@ internal class ProductRepository : IProductRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Product?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetProductAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default)
     {
         return await dbContext.Products
-            .Where(p => p.Id == productId)
-            .Include(p => p.Variants)
+            .Where(p => p.Id == productId && p.VariantId == variantId)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
