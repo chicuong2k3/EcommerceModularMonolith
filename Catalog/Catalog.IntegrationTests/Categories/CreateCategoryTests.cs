@@ -31,7 +31,7 @@ public class CreateCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(categoryName.ToLower(), result.Value.Name);
-        Assert.Null(result.Value.ParentId);
+        Assert.Null(result.Value.ParentCategoryId);
         Assert.Empty(result.Value.SubCategories);
 
         // Verify persistence
@@ -57,7 +57,7 @@ public class CreateCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(subCategoryName.ToLower(), result.Value.Name);
-        Assert.Equal(parentCategory.Id, result.Value.ParentId);
+        Assert.Equal(parentCategory.Id, result.Value.ParentCategoryId);
         Assert.Empty(result.Value.SubCategories);
 
         // Verify parent category has subcategory
@@ -133,7 +133,7 @@ public class CreateCategoryTests : IntegrationTestBase
         Assert.All(results, result =>
         {
             Assert.True(result.IsSuccess);
-            Assert.Equal(parentCategory.Id, result.Value.ParentId);
+            Assert.Equal(parentCategory.Id, result.Value.ParentCategoryId);
             Assert.Empty(result.Value.SubCategories);
         });
 

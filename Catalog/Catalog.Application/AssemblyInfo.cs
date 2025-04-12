@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Catalog.Application.UnitTests")]
 
 namespace Catalog.Application;
 

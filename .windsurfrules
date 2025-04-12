@@ -1,0 +1,2 @@
+1. Use camelCase with no underscores for private fields
+2. Use var keyword when possible

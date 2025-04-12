@@ -1,9 +1,9 @@
-﻿using Ordering.Application.Carts.ReadModels;
+﻿using Ordering.Domain.OrderAggregate.Errors;
 
 namespace Ordering.Application.Carts.Commands;
 
 public record AddItemToCart(Guid OwnerId,
-                            List<AddItemDto> Items) : ICommand<CartReadModel>;
+                            List<AddItemDto> Items) : ICommand;
 
 public record AddItemDto(
     Guid ProductId,
@@ -11,10 +11,11 @@ public record AddItemDto(
     int Quantity);
 
 internal sealed class AddItemToCartHandler(
-    ICartRepository cartRepository)
-    : ICommandHandler<AddItemToCart, CartReadModel>
+    ICartRepository cartRepository,
+    IProductRepository productRepository)
+    : ICommandHandler<AddItemToCart>
 {
-    public async Task<Result<CartReadModel>> Handle(AddItemToCart command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(AddItemToCart command, CancellationToken cancellationToken)
     {
         var cart = await cartRepository.GetAsync(command.OwnerId, cancellationToken);
 
@@ -25,6 +26,18 @@ internal sealed class AddItemToCartHandler(
 
         foreach (var item in command.Items)
         {
+            var product = await productRepository.GetProductAsync(item.ProductId, item.ProductVariantId, cancellationToken);
+
+            if (product == null)
+            {
+                return Result.Fail(new NotFoundError($"Product with id {item.ProductId} not found."));
+            }
+
+            if (product.Quantity < item.Quantity)
+            {
+                return Result.Fail(new OutOfStockError(product.Name, product.Quantity, item.Quantity));
+            }
+
             var addItemResult = await cart.AddItemAsync(
                 item.ProductId,
                 item.ProductVariantId,
@@ -38,17 +51,6 @@ internal sealed class AddItemToCartHandler(
 
         await cartRepository.UpsertAsync(cart, cancellationToken);
 
-        return Result.Ok(new CartReadModel()
-        {
-            Id = cart.Id,
-            OwnerId = cart.OwnerId,
-            Items = cart.Items.Select(i => new CartItemReadModel()
-            {
-                Id = i.Id,
-                ProductId = i.ProductId,
-                ProductVariantId = i.ProductVariantId,
-                Quantity = i.Quantity
-            }).ToList()
-        });
+        return Result.Ok();
     }
 }

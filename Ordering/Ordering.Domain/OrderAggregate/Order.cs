@@ -1,11 +1,13 @@
-﻿namespace Ordering.Domain.OrderAggregate;
+﻿using Ordering.Domain.OrderAggregate.Errors;
+
+namespace Ordering.Domain.OrderAggregate;
 
 public class Order : AggregateRoot
 {
     public Guid CustomerId { get; private set; }
     private List<OrderItem> items = [];
     public IReadOnlyCollection<OrderItem> Items => items.AsReadOnly();
-    public OrderStatus Status { get; private set; }
+    public OrderStatus Status { get; set; }
 
     public DateTime OrderDate { get; private set; }
     public Money Total { get; private set; }
@@ -57,8 +59,8 @@ public class Order : AggregateRoot
     {
         switch (PaymentInfo.PaymentMethod)
         {
-            case PaymentMethod.CreditCard:
-            case PaymentMethod.PayPal:
+            case PaymentMethod.BankTransfer:
+            case PaymentMethod.MoMo:
                 Raise(new OrderPlacedForOnlinePayment(
                     Id,
                     CustomerId,
@@ -71,7 +73,7 @@ public class Order : AggregateRoot
     public Result MarkAsPaid()
     {
         if (Status != OrderStatus.PendingPayment)
-            return Result.Fail("Invalid order status");
+            return Result.Fail(new InvalidOrderStatus("Order status must be PendingPayment to be marked as paid"));
 
         Status = OrderStatus.Paid;
         return Result.Ok();
@@ -79,8 +81,10 @@ public class Order : AggregateRoot
 
     public Result StartProcessing()
     {
+        if (PaymentInfo.PaymentMethod != PaymentMethod.COD && Status != OrderStatus.Paid)
+            return Result.Fail(new InvalidOrderStatus("Online payment order must be paid before starting processing"));
         if (Status != OrderStatus.PendingPayment && Status != OrderStatus.Paid)
-            return Result.Fail(new ValidationError("Invalid order status"));
+            return Result.Fail(new InvalidOrderStatus("Order status must be PendingPayment or Paid to start processing"));
 
         Status = OrderStatus.Processing;
         return Result.Ok();
@@ -89,7 +93,7 @@ public class Order : AggregateRoot
     public Result MarkAsShipped(string trackingNumber)
     {
         if (Status != OrderStatus.Processing)
-            return Result.Fail(new ValidationError("Order must be Processing before shipping"));
+            return Result.Fail(new InvalidOrderStatus("Order must be Processing before shipping"));
 
         Status = OrderStatus.Shipped;
         //Raise(new OrderShipped(Id, trackingNumber));
@@ -99,7 +103,7 @@ public class Order : AggregateRoot
     public Result MarkAsDelivered()
     {
         if (Status != OrderStatus.Shipped)
-            return Result.Fail(new ValidationError("Order must be Shipped before delivery"));
+            return Result.Fail(new InvalidOrderStatus("Order must be Shipped before delivery"));
 
         Status = OrderStatus.Delivered;
         return Result.Ok();
@@ -111,7 +115,7 @@ public class Order : AggregateRoot
             || Status == OrderStatus.Delivered
             || Status == OrderStatus.Canceled
             || Status == OrderStatus.Refunded)
-            return Result.Fail(new ValidationError("Cannot cancel a shipped/delivered/canceled/refunded order"));
+            return Result.Fail(new InvalidOrderStatus("Cannot cancel a shipped/delivered/canceled/refunded order"));
 
         Status = OrderStatus.Canceled;
         Raise(new OrderCanceled(Id));
@@ -121,7 +125,7 @@ public class Order : AggregateRoot
     public Result Refund(decimal amount)
     {
         if (Status != OrderStatus.Delivered)
-            return Result.Fail(new ValidationError("Refunds are only allowed for delivered orders"));
+            return Result.Fail(new InvalidOrderStatus("Refunds are only allowed for delivered orders"));
 
         Status = OrderStatus.Refunded;
         //Raise(new OrderRefunded(Id, amount));

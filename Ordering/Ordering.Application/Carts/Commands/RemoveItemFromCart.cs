@@ -14,7 +14,7 @@ internal sealed class RemoveItemFromCartHandler(
         var cart = await cartRepository.GetAsync(command.OwnerId, cancellationToken);
         if (cart == null)
         {
-            return Result.Fail("Cart not found");
+            return Result.Fail(new NotFoundError("Cart not found"));
         }
 
         var result = cart.RemoveItem(command.ProductVariantId, command.Quantity);

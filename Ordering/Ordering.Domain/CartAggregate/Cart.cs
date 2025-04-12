@@ -53,13 +53,13 @@ public class Cart : AggregateRoot
         if (existingItem == null)
             return Result.Fail(new NotFoundError($"Product variant with id '{productVariantId}' not found"));
 
-        existingItem.DecreaseQuantity(quantity);
-        if (existingItem.Quantity == 0)
+        var result = existingItem.DecreaseQuantity(quantity);
+        if (result.IsSuccess && existingItem.Quantity == 0)
         {
             Items.Remove(existingItem);
         }
 
-        return Result.Ok();
+        return result;
     }
 
 }

@@ -25,7 +25,7 @@ internal class CreateProductHandler(IProductRepository productRepository)
             command.ImageUrl,
             command.SalePrice,
             attributesDescription);
-        await productRepository.AddAsync(product, cancellationToken);
+        await productRepository.AddProductAsync(product, cancellationToken);
 
         return Result.Ok();
     }

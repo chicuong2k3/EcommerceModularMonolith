@@ -11,7 +11,7 @@ internal class ProductRepository : IProductRepository
         this.dbContext = dbContext;
     }
 
-    public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
+    public async Task AddProductAsync(Product product, CancellationToken cancellationToken = default)
     {
         dbContext.Products.Add(product);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -22,6 +22,12 @@ internal class ProductRepository : IProductRepository
         return await dbContext.Products
             .Where(p => p.Id == productId && p.VariantId == variantId)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task RemoveProductAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        dbContext.Products.Remove(product);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

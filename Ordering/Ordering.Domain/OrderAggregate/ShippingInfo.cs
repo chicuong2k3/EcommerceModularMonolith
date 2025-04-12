@@ -1,4 +1,6 @@
-﻿namespace Ordering.Domain.OrderAggregate;
+﻿using System.Text.RegularExpressions;
+
+namespace Ordering.Domain.OrderAggregate;
 
 public record ShippingInfo
 {
@@ -17,9 +19,19 @@ public record ShippingInfo
 
     public static Result<ShippingInfo> Create(Money shippingCosts, Location shippingAddress, string phoneNumber)
     {
-        if (phoneNumber.Length < 10)
-            return Result.Fail(new ValidationError("Phone number must be at least 10 digits long."));
+        if (!IsValidPhoneNumber(phoneNumber))
+            return Result.Fail(new ValidationError("Phone number is invalid."));
 
         return Result.Ok(new ShippingInfo(shippingCosts, shippingAddress, phoneNumber));
+    }
+
+    static bool IsValidPhoneNumber(string phoneNumber)
+    {
+        // Define the regex pattern for phone number validation
+        string pattern = @"^(\+?\d{1,3}[-.\s]?)?(\(?\d{1,4}\)?[-.\s]?)?[\d\s.-]{5,15}$";
+
+        Regex regex = new Regex(pattern);
+
+        return regex.IsMatch(phoneNumber);
     }
 }

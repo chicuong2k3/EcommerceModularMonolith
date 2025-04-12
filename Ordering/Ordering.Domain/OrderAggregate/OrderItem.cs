@@ -25,6 +25,7 @@ public class OrderItem : Entity
         string? imageUrl,
         string? attributesDescription)
     {
+        Id = Guid.NewGuid();
         ProductId = productId;
         ProductVariantId = productVariantId;
         ProductName = productName;

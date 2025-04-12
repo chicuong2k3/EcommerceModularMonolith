@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Catalog.Application.EventHandlers.DomainEvents;
 
-internal class PublishEventOnVariantAdded : DomainEventHandler<ProductVariantAdded>
+public class PublishEventOnVariantAdded : DomainEventHandler<ProductVariantAdded>
 {
     private readonly IEventBus eventBus;
     private readonly ILogger<PublishEventOnVariantAdded> logger;

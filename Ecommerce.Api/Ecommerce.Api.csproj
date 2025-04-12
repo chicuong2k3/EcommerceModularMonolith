@@ -33,7 +33,5 @@
 		<ProjectReference Include="..\Catalog\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
 		<ProjectReference Include="..\Ordering\Ordering.ApiContracts\Ordering.ApiContracts.csproj" />
 		<ProjectReference Include="..\Ordering\Ordering.Infrastructure\Ordering.Infrastructure.csproj" />
-		<ProjectReference Include="..\Promotion\Promotion.ApiContracts\Promotion.ApiContracts.csproj" />
-		<ProjectReference Include="..\Promotion\Promotion.Infrastructure\Promotion.Infrastructure.csproj" />
 	</ItemGroup>
 </Project>

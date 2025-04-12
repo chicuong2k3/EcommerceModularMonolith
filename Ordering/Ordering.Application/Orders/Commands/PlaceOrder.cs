@@ -1,5 +1,4 @@
-using Ordering.Domain.OrderAggregate;
-using Ordering.Domain.OrderAggregate.Events;
+using Ordering.Domain.OrderAggregate.Errors;
 
 namespace Ordering.Application.Orders.Commands;
 
@@ -26,12 +25,12 @@ internal sealed class PlaceOrderHandler(
         var cart = await cartRepository.GetAsync(command.CustomerId, cancellationToken);
 
         if (cart == null)
-            return Result.Fail(new NotFoundError("Cart not found"));
+            return Result.Fail(new CartEmptyError("There is no items in cart"));
 
         var cartItems = cart.Items.ToList();
 
         if (!cartItems.Any())
-            return Result.Fail("There is no items in cart");
+            return Result.Fail(new CartEmptyError("There is no items in cart"));
 
         // Create order items
         var orderItems = new List<OrderItem>();
@@ -44,7 +43,7 @@ internal sealed class PlaceOrderHandler(
 
             // Check if the product is in stock
             if (product.Quantity < item.Quantity)
-                return Result.Fail(new ValidationError($"Product '{product.Name}' is out of stock"));
+                return Result.Fail(new OutOfStockError(product.Name, product.Quantity, item.Quantity));
 
             var originalPrice = Money.FromDecimal(product.OriginalPrice).Value;
             var salePrice = product.SalePrice != null
@@ -76,15 +75,15 @@ internal sealed class PlaceOrderHandler(
         if (locationCreationResult.IsFailed)
             return Result.Fail(locationCreationResult.Errors);
 
-        // Create payment info
-        var paymentInfoCreationResult = PaymentInfo.Create(command.PaymentMethod);
-        if (paymentInfoCreationResult.IsFailed)
-            return Result.Fail(paymentInfoCreationResult.Errors);
-
         // Create shipping info
         var shippingInfoCreationResult = ShippingInfo.Create(Money.FromDecimal(0).Value, locationCreationResult.Value, command.PhoneNumber);
         if (shippingInfoCreationResult.IsFailed)
             return Result.Fail(shippingInfoCreationResult.Errors);
+
+        // Create payment info
+        var paymentInfoCreationResult = PaymentInfo.Create(command.PaymentMethod);
+        if (paymentInfoCreationResult.IsFailed)
+            return Result.Fail(paymentInfoCreationResult.Errors);
 
 
         var orderCreationResult = Order.Create(
