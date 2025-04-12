@@ -11,7 +11,7 @@ internal sealed class GetCategoriesHandler(
     public async Task<Result<List<CategoryListItemReadModel>>> Handle(GetCategories query, CancellationToken cancellationToken)
     {
         var sql = """
-            SELECT "Id", "Name" FROM "catalog"."Categories"
+            SELECT "Id", "Name", "ParentCategoryId" FROM "catalog"."Categories"
             """;
 
         var categories = (await connection.QueryAsync<CategoryListItemReadModel>(sql)).ToList();

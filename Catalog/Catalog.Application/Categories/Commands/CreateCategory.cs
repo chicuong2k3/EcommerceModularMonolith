@@ -39,7 +39,8 @@ internal sealed class CreateCategoryHandler(
             {
                 Id = c.Id,
                 Name = c.Name
-            }).ToList()
+            }).ToList(),
+            ParentId = category.ParentCategoryId
         });
 
     }

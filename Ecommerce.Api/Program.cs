@@ -1,3 +1,4 @@
+using Billing.Infrastructure;
 using Billing.Infrastructure.Persistence;
 using Catalog.Infrastructure;
 using Catalog.Infrastructure.Persistence;
@@ -35,7 +36,7 @@ builder.Services.RegisterCommonServices(
 
 builder.Services.RegisterCatalogServices(builder.Configuration);
 builder.Services.RegisterOrderingServices(builder.Configuration);
-//builder.Services.RegisterPaymentServices(builder.Configuration);
+builder.Services.RegisterBillingServices(builder.Configuration);
 
 builder.Services.AddControllers();
 

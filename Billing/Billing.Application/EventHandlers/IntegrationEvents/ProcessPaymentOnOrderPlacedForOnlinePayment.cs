@@ -46,8 +46,16 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
                 throw new Exception("Payment creation failed");
             }
 
-            var gateway = paymentGatewayFactory.CreateGateway(integrationEvent.PaymentMethod);
+            var paymentMethod = Enum.Parse<PaymentMethod>(integrationEvent.PaymentMethod);
+
+            var gateway = paymentGatewayFactory.CreateGateway(paymentMethod);
             var payment = await paymentRepository.GetPaymentByOrderIdAsync(integrationEvent.OrderId, cancellationToken);
+
+            if (payment == null)
+            {
+                logger.LogError("Payment not found for order {OrderId}", integrationEvent.OrderId);
+                throw new Exception("Payment not found");
+            }
 
             var paymentUrlResult = await gateway.CreatePaymentUrlAsync(
                 payment,

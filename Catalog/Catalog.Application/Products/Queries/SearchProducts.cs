@@ -12,7 +12,7 @@ public record SearchProducts(
     decimal? MaxPrice,
     List<AttributeValue>? Attributes) : IQuery<PaginationResult<ProductReadModel>>;
 
-internal sealed class SearchProductsQueryHandler(IDbConnection dbConnection)
+internal sealed class SearchProductsHandler(IDbConnection dbConnection)
     : IQueryHandler<SearchProducts, PaginationResult<ProductReadModel>>
 {
     public async Task<Result<PaginationResult<ProductReadModel>>> Handle(SearchProducts query, CancellationToken cancellationToken)

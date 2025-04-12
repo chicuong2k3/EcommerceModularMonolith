@@ -8,6 +8,7 @@ public sealed class Category : AggregateRoot
     }
 
     public string Name { get; private set; }
+    public Guid? ParentCategoryId { get; private set; }
     private List<Category> subCategories = [];
 
     public IReadOnlyCollection<Category> SubCategories => subCategories.AsReadOnly();
@@ -22,6 +23,9 @@ public sealed class Category : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(name))
             return Result.Fail(new ValidationError("Category name is required."));
+
+        if (name.Length > 100)
+            return Result.Fail(new ValidationError("Category name cannot exceed 100 characters."));
 
         return Result.Ok(new Category(name));
     }

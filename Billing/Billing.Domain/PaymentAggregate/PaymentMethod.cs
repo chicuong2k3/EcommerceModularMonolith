@@ -4,5 +4,6 @@ public enum PaymentMethod
 {
     COD,
     OnlinePayment,
-    BankTransfer
+    BankTransfer,
+    Momo
 }

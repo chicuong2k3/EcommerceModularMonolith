@@ -1,4 +1,4 @@
-﻿using Catalog.Application.Products.Commands;
+using Catalog.Application.Products.Commands;
 using Catalog.Domain.CategoryAggregate;
 using Catalog.Domain.ProductAggregate;
 using Common.Domain;
@@ -84,6 +84,50 @@ public class CreateProductHandlerTests
     {
         // Arrange
         var command = new CreateProduct("", "Invalid product", null);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, error => error is ValidationError);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnFailure_When_DescriptionIsInvalid()
+    {
+        // Arrange
+        var command = new CreateProduct("Laptop", "", null); // Empty description
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, error => error is ValidationError);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnFailure_When_NameExceedsMaxLength()
+    {
+        // Arrange
+        var longName = new string('a', 201); // Assuming max length is 200
+        var command = new CreateProduct(longName, "Valid description", null);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, error => error is ValidationError);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnFailure_When_DescriptionExceedsMaxLength()
+    {
+        // Arrange
+        var longDescription = new string('a', 1001); // Assuming max length is 1000
+        var command = new CreateProduct("Valid name", longDescription, null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);

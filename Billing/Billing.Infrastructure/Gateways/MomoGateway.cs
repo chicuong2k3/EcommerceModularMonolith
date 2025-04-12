@@ -11,6 +11,11 @@ internal class MomoGateway : IPaymentGateway
         return Task.FromResult(Result.Ok());
     }
 
+    public Task<Result<PaymentUrlInfo>> CreatePaymentUrlAsync(Payment payment, string returnUrl, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<Result> RefundAsync(Payment payment, Transaction transaction, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
