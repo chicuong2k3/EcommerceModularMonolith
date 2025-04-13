@@ -1,228 +1,291 @@
-//using Ordering.Application.Orders.Queries;
-//using Ordering.Domain.OrderAggregate;
-//using Ordering.Domain.ProductAggregate;
-//using Ordering.IntegrationTests.Abstractions;
-//using Ordering.IntegrationTests.Helpers;
-//using Microsoft.Extensions.DependencyInjection;
-//using System;
-//using System.Collections.Generic;
-//using System.Threading.Tasks;
-//using Xunit;
+using Ordering.Application.Orders.Queries;
+using Ordering.Domain.OrderAggregate;
+using Ordering.IntegrationTests.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Common.Domain;
+using Catalog.Contracts;
+using Moq;
 
-//namespace Ordering.IntegrationTests.Orders;
+namespace Ordering.IntegrationTests.Orders;
 
-//public class GetOrderByIdHandlerTests : IntegrationTestBase
-//{
-//    private readonly IOrderRepository orderRepository;
-//    private readonly IProductRepository productRepository;
+public class GetOrderByIdHandlerTests : IntegrationTestBase
+{
+    private readonly IOrderRepository orderRepository;
+    private readonly Mock<IProductService> productServiceMock;
 
-//    public GetOrderByIdHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
-//    {
-//        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
-//        productRepository = serviceScope.ServiceProvider.GetRequiredService<IProductRepository>();
-//    }
+    public GetOrderByIdHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
+    {
+        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
 
-//    [Fact]
-//    public async Task Handle_ReturnsOrder_WhenOrderExists()
-//    {
-//        // Arrange - Create a test order
-//        var order = await CreateTestOrderAsync();
-//        var query = new GetOrderById(order.Id);
+        // Set up mock for IProductService
+        productServiceMock = new Mock<IProductService>();
 
-//        // Act
-//        var result = await mediator.Send(query);
+        // Configure the service provider to use the mock
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton(productServiceMock.Object);
+    }
 
-//        // Assert
-//        Assert.True(result.IsSuccess);
+    [Fact]
+    public async Task Handle_ReturnsOrder_WhenOrderExists()
+    {
+        // Arrange - Create a test order
+        var order = await CreateTestOrderAsync();
+        var query = new GetOrderById(order.Id);
 
-//        // Verify order details
-//        var retrievedOrder = result.Value;
-//        Assert.NotNull(retrievedOrder);
-//        Assert.Equal(order.Id, retrievedOrder.Id);
-//        Assert.Equal(order.CustomerId, retrievedOrder.CustomerId);
-//        Assert.Equal(order.Status, retrievedOrder.Status);
+        // Act
+        var result = await mediator.Send(query);
 
-//        // Verify items
-//        Assert.NotEmpty(retrievedOrder.Items);
-//        Assert.Equal(order.Items.Count, retrievedOrder.Items.Count);
+        // Assert
+        Assert.True(result.IsSuccess);
 
-//        // Verify monetary values
-//        Assert.Equal(order.Subtotal.Amount, retrievedOrder.Subtotal.Amount);
-//        Assert.Equal(order.Total.Amount, retrievedOrder.Total.Amount);
-//    }
+        // Verify order details
+        var retrievedOrder = result.Value;
+        Assert.NotNull(retrievedOrder);
+        Assert.Equal(order.Id, retrievedOrder.Id);
+        Assert.Equal(order.CustomerId, retrievedOrder.CustomerId);
+        Assert.Equal(order.Status, retrievedOrder.Status);
 
-//    [Fact]
-//    public async Task Handle_ReturnsNotFound_WhenOrderDoesNotExist()
-//    {
-//        // Arrange
-//        var nonExistentOrderId = Guid.NewGuid();
-//        var query = new GetOrderById(nonExistentOrderId);
+        // Verify items
+        Assert.NotEmpty(retrievedOrder.Items);
+        Assert.Equal(order.Items.Count, retrievedOrder.Items.Count);
 
-//        // Act
-//        var result = await mediator.Send(query);
+        // Verify monetary values
+        Assert.Equal(order.Subtotal.Amount, retrievedOrder.Subtotal.Amount);
+        Assert.Equal(order.Total.Amount, retrievedOrder.Total.Amount);
+    }
 
-//        // Assert
-//        Assert.True(result.IsFailed);
-//        Assert.Contains(result.Errors, e => e.Message.Contains("not found"));
-//    }
+    [Fact]
+    public async Task Handle_ReturnsNotFound_WhenOrderDoesNotExist()
+    {
+        // Arrange
+        var nonExistentOrderId = Guid.NewGuid();
+        var query = new GetOrderById(nonExistentOrderId);
 
-//    [Fact]
-//    public async Task Handle_ReturnsCompleteOrderDetails_WithAllProperties()
-//    {
-//        // Arrange - Create a test order with multiple items
-//        var order = await CreateTestOrderWithMultipleItemsAsync();
-//        var query = new GetOrderById(order.Id);
+        // Act
+        var result = await mediator.Send(query);
 
-//        // Act
-//        var result = await mediator.Send(query);
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, e => e is NotFoundError);
+    }
 
-//        // Assert
-//        Assert.True(result.IsSuccess);
+    [Fact]
+    public async Task Handle_ReturnsCompleteOrderDetails_WithAllProperties()
+    {
+        // Arrange - Create a test order with multiple items
+        var order = await CreateTestOrderWithMultipleItemsAsync();
+        var query = new GetOrderById(order.Id);
 
-//        var retrievedOrder = result.Value;
-//        Assert.NotNull(retrievedOrder);
+        // Act
+        var result = await mediator.Send(query);
 
-//        // Verify all order properties are loaded
-//        Assert.Equal(order.Id, retrievedOrder.Id);
-//        Assert.Equal(order.CustomerId, retrievedOrder.CustomerId);
-//        Assert.Equal(order.Status, retrievedOrder.Status);
-//        Assert.Equal(order.OrderDate, retrievedOrder.OrderDate);
+        // Assert
+        Assert.True(result.IsSuccess);
 
-//        // Verify shipping info
-//        Assert.NotNull(retrievedOrder.ShippingInfo);
-//        Assert.Equal(order.ShippingInfo.ShippingCosts.Amount, retrievedOrder.ShippingInfo.ShippingCosts.Amount);
-//        Assert.Equal(order.ShippingInfo.PhoneNumber, retrievedOrder.ShippingInfo.PhoneNumber);
-//        Assert.NotNull(retrievedOrder.ShippingInfo.ShippingAddress);
-//        Assert.Equal(order.ShippingInfo.ShippingAddress.Country, retrievedOrder.ShippingInfo.ShippingAddress.Country);
+        var retrievedOrder = result.Value;
+        Assert.NotNull(retrievedOrder);
 
-//        // Verify payment info
-//        Assert.NotNull(retrievedOrder.PaymentInfo);
-//        Assert.Equal(order.PaymentInfo.PaymentMethod, retrievedOrder.PaymentInfo.PaymentMethod);
+        // Verify all order properties are loaded
+        Assert.Equal(order.Id, retrievedOrder.Id);
+        Assert.Equal(order.CustomerId, retrievedOrder.CustomerId);
+        Assert.Equal(order.Status, retrievedOrder.Status);
+        Assert.Equal(order.OrderDate, retrievedOrder.OrderDate);
 
-//        // Verify items
-//        Assert.Equal(2, retrievedOrder.Items.Count);
-//        foreach (var item in retrievedOrder.Items)
-//        {
-//            // Verify item properties
-//            Assert.NotEqual(Guid.Empty, item.Id);
-//            Assert.NotEqual(Guid.Empty, item.ProductId);
-//            Assert.NotEqual(Guid.Empty, item.ProductVariantId);
-//            Assert.NotEmpty(item.ProductName);
-//            Assert.True(item.Quantity > 0);
-//            Assert.NotNull(item.OriginalPrice);
-//            Assert.NotNull(item.SalePrice);
-//        }
+        // Verify shipping info
+        Assert.NotNull(retrievedOrder.ShippingInfo);
+        Assert.Equal(order.ShippingInfo.ShippingCosts.Amount, retrievedOrder.ShippingInfo.ShippingCosts.Amount);
+        Assert.Equal(order.ShippingInfo.PhoneNumber, retrievedOrder.ShippingInfo.PhoneNumber);
+        Assert.NotNull(retrievedOrder.ShippingInfo.ShippingAddress);
+        Assert.Equal(order.ShippingInfo.ShippingAddress.Country, retrievedOrder.ShippingInfo.ShippingAddress.Country);
 
-//        // Verify monetary calculations
-//        var expectedSubtotal = 0m;
-//        foreach (var item in order.Items)
-//        {
-//            expectedSubtotal += item.SalePrice.Amount * item.Quantity;
-//        }
+        // Verify payment info
+        Assert.NotNull(retrievedOrder.PaymentInfo);
+        Assert.Equal(order.PaymentInfo.PaymentMethod, retrievedOrder.PaymentInfo.PaymentMethod);
 
-//        Assert.Equal(expectedSubtotal, retrievedOrder.Subtotal.Amount);
-//        Assert.Equal(expectedSubtotal + order.ShippingInfo.ShippingCosts.Amount, retrievedOrder.Total.Amount);
-//    }
+        // Verify items
+        Assert.Equal(2, retrievedOrder.Items.Count);
+        foreach (var item in retrievedOrder.Items)
+        {
+            // Verify item properties
+            Assert.NotEqual(Guid.Empty, item.Id);
+            Assert.NotEqual(Guid.Empty, item.ProductId);
+            Assert.NotEqual(Guid.Empty, item.ProductVariantId);
+            Assert.NotEmpty(item.ProductName);
+            Assert.True(item.Quantity > 0);
+            Assert.NotNull(item.OriginalPrice);
+            Assert.NotNull(item.SalePrice);
+        }
 
-//    private async Task<Order> CreateTestOrderAsync()
-//    {
-//        // Create test product
-//        var product = TestProductHelper.CreateTestProduct(
-//            Guid.NewGuid(), Guid.NewGuid(), faker.Commerce.ProductName(), 29.99m, 10);
-//        await productRepository.AddProductAsync(product);
+        // Verify monetary calculations
+        var expectedSubtotal = 0m;
+        foreach (var item in order.Items)
+        {
+            expectedSubtotal += item.SalePrice.Amount * item.Quantity;
+        }
 
-//        // Create order
-//        var customerId = Guid.NewGuid();
-//        var location = Location.Create(
-//            "123 Test St",
-//            "Test Ward",
-//            "Test District",
-//            "Test Province",
-//            "Test Country").Value;
+        Assert.Equal(expectedSubtotal, retrievedOrder.Subtotal.Amount);
+        Assert.Equal(expectedSubtotal + order.ShippingInfo.ShippingCosts.Amount, retrievedOrder.Total.Amount);
+    }
 
-//        var paymentInfo = PaymentInfo.Create("COD").Value;
-//        var shippingInfo = ShippingInfo.Create(
-//            Money.FromDecimal(5.99m).Value,
-//            location,
-//            "1234567890").Value;
+    private async Task<Order> CreateTestOrderAsync()
+    {
+        // Create test product
+        var productId = Guid.NewGuid();
+        var variantId = Guid.NewGuid();
 
-//        var orderItem = OrderItem.Create(
-//            product.Id,
-//            product.VariantId,
-//            product.Name,
-//            1,
-//            Money.FromDecimal(product.OriginalPrice).Value,
-//            Money.FromDecimal(product.OriginalPrice).Value,
-//            product.ImageUrl,
-//            product.AttributesDescription).Value;
+        // Set up product mock
+        var product = new ProductDto
+        {
+            Id = productId,
+            Name = "Test Product",
+            Variants = new List<ProductVariantDto>
+            {
+                new ProductVariantDto
+                {
+                    VariantId = variantId,
+                    OriginalPrice = 29.99m,
+                    SalePrice = 24.99m,
+                    Quantity = 10,
+                    ImageUrl = "https://test-product.jpg",
+                    Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
+                }
+            }
+        };
 
-//        var orderResult = Order.Create(
-//            customerId,
-//            paymentInfo,
-//            shippingInfo,
-//            new List<OrderItem> { orderItem });
+        productServiceMock.Setup(s => s.GetProductByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
 
-//        var order = orderResult.Value;
-//        await orderRepository.AddAsync(order);
+        // Create order
+        var customerId = Guid.NewGuid();
+        var location = Location.Create(
+            "123 Test St",
+            "Test Ward",
+            "Test District",
+            "Test Province",
+            "Test Country").Value;
 
-//        return order;
-//    }
+        var paymentInfo = PaymentInfo.Create("COD").Value;
+        var shippingInfo = ShippingInfo.Create(
+            Money.FromDecimal(5.99m).Value,
+            location,
+            "1234567890").Value;
 
-//    private async Task<Order> CreateTestOrderWithMultipleItemsAsync()
-//    {
-//        // Create test products
-//        var product1 = TestProductHelper.CreateTestProduct(
-//            Guid.NewGuid(), Guid.NewGuid(), faker.Commerce.ProductName(), 29.99m, 10);
-//        var product2 = TestProductHelper.CreateTestProduct(
-//            Guid.NewGuid(), Guid.NewGuid(), faker.Commerce.ProductName(), 49.99m, 5);
+        var orderItem = OrderItem.Create(
+            product.Id,
+            variantId,
+            product.Name,
+            1,
+            Money.FromDecimal(29.99m).Value,
+            Money.FromDecimal(24.99m).Value,
+            "https://test-product.jpg",
+            "Color: Blue, Size: M").Value;
 
-//        await productRepository.AddProductAsync(product1);
-//        await productRepository.AddProductAsync(product2);
+        var orderResult = Order.Create(
+            customerId,
+            paymentInfo,
+            shippingInfo,
+            new List<OrderItem> { orderItem });
 
-//        // Create order
-//        var customerId = Guid.NewGuid();
-//        var location = Location.Create(
-//            "123 Test St",
-//            "Test Ward",
-//            "Test District",
-//            "Test Province",
-//            "Test Country").Value;
+        var order = orderResult.Value;
+        await orderRepository.AddAsync(order);
 
-//        var paymentInfo = PaymentInfo.Create("CreditCard").Value;
-//        var shippingInfo = ShippingInfo.Create(
-//            Money.FromDecimal(7.99m).Value,
-//            location,
-//            "1234567890").Value;
+        return order;
+    }
 
-//        var orderItem1 = OrderItem.Create(
-//            product1.Id,
-//            product1.VariantId,
-//            product1.Name,
-//            2,
-//            Money.FromDecimal(product1.OriginalPrice).Value,
-//            Money.FromDecimal(product1.OriginalPrice).Value,
-//            product1.ImageUrl,
-//            product1.AttributesDescription).Value;
+    private async Task<Order> CreateTestOrderWithMultipleItemsAsync()
+    {
+        // Create test products
+        var product1Id = Guid.NewGuid();
+        var variant1Id = Guid.NewGuid();
 
-//        var orderItem2 = OrderItem.Create(
-//            product2.Id,
-//            product2.VariantId,
-//            product2.Name,
-//            1,
-//            Money.FromDecimal(product2.OriginalPrice).Value,
-//            Money.FromDecimal(product2.OriginalPrice).Value,
-//            product2.ImageUrl,
-//            product2.AttributesDescription).Value;
+        var product1 = new ProductDto
+        {
+            Id = product1Id,
+            Name = "First Test Product",
+            Variants = new List<ProductVariantDto>
+            {
+                new ProductVariantDto
+                {
+                    VariantId = variant1Id,
+                    OriginalPrice = 29.99m,
+                    SalePrice = 24.99m,
+                    Quantity = 10,
+                    ImageUrl = "https://first-product.jpg",
+                    Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "L" } }
+                }
+            }
+        };
 
-//        var orderResult = Order.Create(
-//            customerId,
-//            paymentInfo,
-//            shippingInfo,
-//            new List<OrderItem> { orderItem1, orderItem2 });
+        var product2Id = Guid.NewGuid();
+        var variant2Id = Guid.NewGuid();
 
-//        var order = orderResult.Value;
-//        await orderRepository.AddAsync(order);
+        var product2 = new ProductDto
+        {
+            Id = product2Id,
+            Name = "Second Test Product",
+            Variants = new List<ProductVariantDto>
+            {
+                new ProductVariantDto
+                {
+                    VariantId = variant2Id,
+                    OriginalPrice = 49.99m,
+                    SalePrice = 44.99m,
+                    Quantity = 5,
+                    ImageUrl = "https://second-product.jpg",
+                    Attributes = new Dictionary<string, string> { { "Color", "Black" }, { "Size", "XL" } }
+                }
+            }
+        };
 
-//        return order;
-//    }
-//}
+        productServiceMock.Setup(s => s.GetProductByIdAsync(product1Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product1);
+        productServiceMock.Setup(s => s.GetProductByIdAsync(product2Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product2);
+
+        // Create order
+        var customerId = Guid.NewGuid();
+        var location = Location.Create(
+            "123 Test St",
+            "Test Ward",
+            "Test District",
+            "Test Province",
+            "Test Country").Value;
+
+        var paymentInfo = PaymentInfo.Create("BankTransfer").Value;
+        var shippingInfo = ShippingInfo.Create(
+            Money.FromDecimal(7.99m).Value,
+            location,
+            "1234567890").Value;
+
+        var orderItem1 = OrderItem.Create(
+            product1Id,
+            variant1Id,
+            product1.Name,
+            2,
+            Money.FromDecimal(29.99m).Value,
+            Money.FromDecimal(24.99m).Value,
+            "https://first-product.jpg",
+            "Color: Red, Size: L").Value;
+
+        var orderItem2 = OrderItem.Create(
+            product2Id,
+            variant2Id,
+            product2.Name,
+            1,
+            Money.FromDecimal(49.99m).Value,
+            Money.FromDecimal(44.99m).Value,
+            "https://second-product.jpg",
+            "Color: Black, Size: XL").Value;
+
+        var orderResult = Order.Create(
+            customerId,
+            paymentInfo,
+            shippingInfo,
+            new List<OrderItem> { orderItem1, orderItem2 });
+
+        var order = orderResult.Value;
+        await orderRepository.AddAsync(order);
+
+        return order;
+    }
+}

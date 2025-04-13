@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Catalog.Infrastructure.Persistence;
+namespace Catalog.Infrastructure.Persistence.Configurations;
 
 internal sealed class ProductVariantAttributeConfiguration : IEntityTypeConfiguration<ProductVariantAttribute>
 {

@@ -199,42 +199,6 @@ namespace Ordering.Infrastructure.Persistence.Migrations
                     b.ToTable("OrderItems", "ordering");
                 });
 
-            modelBuilder.Entity("Ordering.Domain.ProductAggregate.Product", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AttributesDescription")
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<decimal>("OriginalPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal?>("SalePrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("VariantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Products", "ordering");
-                });
-
             modelBuilder.Entity("Ordering.Domain.CartAggregate.CartItem", b =>
                 {
                     b.HasOne("Ordering.Domain.CartAggregate.Cart", null)

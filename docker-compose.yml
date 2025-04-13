@@ -16,6 +16,9 @@ services:
   database:
     image: postgres:latest
 
+  mongodb:
+    image: mongo:latest
+
   redis:
     image: redis:latest
 
@@ -34,6 +37,7 @@ volumes:
   seq_data:
   database_data:
   pgadmin_data:
+  mongodb_data:
 
 
 

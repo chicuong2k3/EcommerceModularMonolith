@@ -1,28 +1,33 @@
 using Ordering.Application.Orders.Commands;
 using Ordering.Domain.OrderAggregate;
-using Ordering.Domain.ProductAggregate;
+using Catalog.Contracts;
 using Ordering.IntegrationTests.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Ordering.Infrastructure.Persistence;
-using Ordering.Domain.OrderAggregate.Events;
-using Common.Infrastructure.Outbox;
 using Common.Domain;
 using Ordering.Domain.OrderAggregate.Errors;
+using Moq;
 
 namespace Ordering.IntegrationTests.Orders;
 
 public class CancelOrderHandlerTests : IntegrationTestBase
 {
     private readonly IOrderRepository orderRepository;
-    private readonly IProductRepository productRepository;
     private readonly OrderingDbContext dbContext;
+    private readonly Mock<IProductService> productServiceMock;
 
     public CancelOrderHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
         orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
-        productRepository = serviceScope.ServiceProvider.GetRequiredService<IProductRepository>();
         dbContext = serviceScope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+
+        // Set up mock for IProductService
+        productServiceMock = new Mock<IProductService>();
+
+        // Configure the service provider to use the mock
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton(productServiceMock.Object);
 
         // Clear any existing order items to prevent conflicts
         ClearDatabase().GetAwaiter().GetResult();
@@ -48,7 +53,7 @@ public class CancelOrderHandlerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Handle_CancelsOrder_InPendingPaymentStatus()
+    public async Task Handle_CancelsOrder_InPaymentPendingStatus()
     {
         // Arrange
         var order = await CreateOrderAsync(OrderStatus.PendingPayment);
@@ -64,7 +69,6 @@ public class CancelOrderHandlerTests : IntegrationTestBase
         var canceledOrder = await orderRepository.GetByIdAsync(order.Id);
         Assert.NotNull(canceledOrder);
         Assert.Equal(OrderStatus.Canceled, canceledOrder.Status);
-
     }
 
     [Fact]
@@ -150,7 +154,7 @@ public class CancelOrderHandlerTests : IntegrationTestBase
     public async Task Handle_ReturnsFail_ForRefundedOrder()
     {
         // Arrange
-        var order = await CreateTestOrderAsync(OrderStatus.Refunded);
+        var order = await CreateOrderAsync(OrderStatus.Refunded);
         var cancelCommand = new CancelOrder(order.Id);
 
         // Act
@@ -161,24 +165,33 @@ public class CancelOrderHandlerTests : IntegrationTestBase
         Assert.Contains(result.Errors, e => e is InvalidOrderStatus);
     }
 
-
     private async Task<Order> CreateOrderAsync(OrderStatus status)
     {
         // Create a product with a unique ID for each test
         var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
 
-        var product = new Product(
-            productId,
-            variantId,
-            $"Test Product for {status}",
-            29.99m,
-            10,
-            "https://test-product.jpg",
-            null,
-            "Test product description");
+        // Set up product mock
+        var product = new ProductDto
+        {
+            Id = productId,
+            Name = $"Test Product for {status}",
+            Variants = new List<ProductVariantDto>
+            {
+                new ProductVariantDto
+                {
+                    VariantId = variantId,
+                    OriginalPrice = 29.99m,
+                    SalePrice = null,
+                    Quantity = 10,
+                    ImageUrl = "https://test-product.jpg",
+                    Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
+                }
+            }
+        };
 
-        await productRepository.AddProductAsync(product);
+        productServiceMock.Setup(s => s.GetProductByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(product);
 
         // Create an order with a unique customer ID for each test
         var customerId = Guid.NewGuid();
@@ -191,7 +204,7 @@ public class CancelOrderHandlerTests : IntegrationTestBase
             1,
             Money.FromDecimal(29.99m).Value,
             Money.FromDecimal(29.99m).Value,
-            null,
+            "https://test-product.jpg",
             null).Value;
 
         var shippingInfo = ShippingInfo.Create(
@@ -206,46 +219,7 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         var paymentInfo = PaymentInfo.Create("COD").Value;
 
-        var order = Order.Create(customerId, paymentInfo, shippingInfo, [orderItem]).Value;
-
-        order.Status = status;
-
-        await orderRepository.AddAsync(order);
-        return order;
-    }
-
-    private async Task<Order> CreateTestOrderAsync(OrderStatus initialStatus)
-    {
-        // Create test products
-        var product = TestProductHelper.CreateTestProduct(
-            Guid.NewGuid(), Guid.NewGuid(), faker.Commerce.ProductName(), 29.99m, 10);
-        await productRepository.AddProductAsync(product);
-
-        // Create a new order
-        var customerId = Guid.NewGuid();
-        var location = Location.Create(
-            "123 Test St",
-            "Test Ward",
-            "Test District",
-            "Test Province",
-            "Test Country").Value;
-
-        var paymentInfo = PaymentInfo.Create("COD").Value;
-        var shippingInfo = ShippingInfo.Create(
-            Money.FromDecimal(5.99m).Value,
-            location,
-            "1234567890").Value;
-
-        var orderItem = OrderItem.Create(
-            product.Id,
-            product.VariantId,
-            product.Name,
-            1,
-            Money.FromDecimal(product.OriginalPrice).Value,
-            Money.FromDecimal(product.OriginalPrice).Value,
-            product.ImageUrl,
-            product.AttributesDescription).Value;
-
+        // Create the order
         var orderResult = Order.Create(
             customerId,
             paymentInfo,
@@ -254,9 +228,12 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         var order = orderResult.Value;
 
-        typeof(Order).GetProperty(nameof(Order.Status))
-            ?.SetValue(order, initialStatus);
+        // Set the status according to the parameter
+        // Note: This is for testing purposes, normally status changes would follow business logic
+        var setStatusField = typeof(Order).GetProperty("Status");
+        setStatusField?.SetValue(order, status);
 
+        // Save to repository
         await orderRepository.AddAsync(order);
 
         return order;

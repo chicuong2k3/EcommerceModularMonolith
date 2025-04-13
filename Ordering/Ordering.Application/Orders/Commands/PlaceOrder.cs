@@ -1,3 +1,4 @@
+using Catalog.Contracts;
 using Ordering.Domain.OrderAggregate.Errors;
 
 namespace Ordering.Application.Orders.Commands;
@@ -16,7 +17,7 @@ public record PlaceOrder(
 internal sealed class PlaceOrderHandler(
     IOrderRepository orderRepository,
     ICartRepository cartRepository,
-    IProductRepository productRepository)
+    IProductService productService)
     : ICommandHandler<PlaceOrder, Order>
 {
     public async Task<Result<Order>> Handle(PlaceOrder command, CancellationToken cancellationToken)
@@ -36,18 +37,22 @@ internal sealed class PlaceOrderHandler(
         var orderItems = new List<OrderItem>();
         foreach (var item in cartItems)
         {
-            var product = await productRepository.GetProductAsync(item.ProductId, item.ProductVariantId, cancellationToken);
+            var product = await productService.GetProductByIdAsync(item.ProductId, cancellationToken);
 
             if (product == null)
                 return Result.Fail(new NotFoundError($"Product with id '{item.ProductId}' not found"));
 
-            // Check if the product is in stock
-            if (product.Quantity < item.Quantity)
-                return Result.Fail(new OutOfStockError(product.Name, product.Quantity, item.Quantity));
+            var productVariant = product.Variants.FirstOrDefault(v => v.VariantId == item.ProductVariantId);
+            if (productVariant == null)
+                return Result.Fail(new NotFoundError($"Product variant with id '{item.ProductVariantId}' not found"));
 
-            var originalPrice = Money.FromDecimal(product.OriginalPrice).Value;
-            var salePrice = product.SalePrice != null
-                ? Money.FromDecimal(product.SalePrice.Value).Value : originalPrice;
+            // Check if the product is in stock
+            if (productVariant.Quantity < item.Quantity)
+                return Result.Fail(new OutOfStockError(product.Name, productVariant.Quantity, item.Quantity));
+
+            var originalPrice = Money.FromDecimal(productVariant.OriginalPrice).Value;
+            var salePrice = productVariant.SalePrice != null
+                ? Money.FromDecimal(productVariant.SalePrice.Value).Value : originalPrice;
 
             var orderItemCreationResult = OrderItem.Create(
                 item.ProductId,
@@ -56,8 +61,8 @@ internal sealed class PlaceOrderHandler(
                 item.Quantity,
                 originalPrice,
                 salePrice,
-                product.ImageUrl,
-                product.AttributesDescription);
+                productVariant.ImageUrl,
+                string.Join(", ", productVariant.Attributes.Select(a => $"{a.Key}: {a.Value}")));
 
             if (orderItemCreationResult.IsFailed)
                 return Result.Fail(orderItemCreationResult.Errors);

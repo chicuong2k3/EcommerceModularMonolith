@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Quartz;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 
@@ -46,6 +49,23 @@ public class IntegrationTestWebAppFactory
 
         builder.ConfigureTestServices(services =>
         {
+            // Remove Quartz hosted service for Outbox and Inbox consumers
+            services.RemoveAll<IHostedService>();
+
+            // Remove all Quartz job configurations
+            services.RemoveAll<IScheduler>();
+            services.RemoveAll<IJob>();
+
+            // Remove all services with "ProcessOutboxMessagesJob" or "ProcessInboxMessagesJob" in their type name
+            var descriptors = services.Where(d =>
+                (d.ServiceType.FullName?.Contains("ProcessOutboxMessagesJob") == true) ||
+                (d.ServiceType.FullName?.Contains("ProcessInboxMessagesJob") == true)).ToList();
+
+            foreach (var descriptor in descriptors)
+            {
+                services.Remove(descriptor);
+            }
+
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
             var scopedServices = scope.ServiceProvider;

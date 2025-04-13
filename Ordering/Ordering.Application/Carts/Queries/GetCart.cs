@@ -1,4 +1,5 @@
-﻿using Ordering.Application.Carts.ReadModels;
+﻿using Catalog.Contracts;
+using Ordering.Application.Carts.ReadModels;
 
 namespace Ordering.Application.Carts.Queries;
 
@@ -6,46 +7,63 @@ public record GetCart(Guid OwnerId) : IQuery<CartReadModel>;
 
 internal sealed class GetCartHandler(
     ICartRepository cartRepository,
-    IProductRepository productRepository)
+    IProductService productService)
     : IQueryHandler<GetCart, CartReadModel>
 {
     public async Task<Result<CartReadModel>> Handle(GetCart query, CancellationToken cancellationToken)
     {
+        // Get or create the cart
         var cart = await cartRepository.GetAsync(query.OwnerId, cancellationToken);
         if (cart == null)
         {
             cart = new Cart(query.OwnerId);
+            await cartRepository.UpsertAsync(cart, cancellationToken);
         }
 
-        var productTasks = cart.Items.Select(i =>
-            productRepository.GetProductAsync(i.ProductId, i.ProductVariantId, cancellationToken)).ToList();
-        var products = await Task.WhenAll(productTasks);
+        // Get product information for each cart item
+        var validCartItems = new List<CartItemReadModel>();
 
-        var cartItems = cart.Items.Zip(products, (item, product) =>
+        foreach (var item in cart.Items)
         {
+            var product = await productService.GetProductByIdAsync(item.ProductId, cancellationToken);
             if (product == null)
             {
-                return new CartItemReadModel();
+                continue;
             }
-            return new CartItemReadModel
+
+            var variant = product.Variants.FirstOrDefault(v => v.VariantId == item.ProductVariantId);
+            if (variant == null)
+            {
+                continue;
+            }
+
+            // Build attributes description
+            string attributesDescription = string.Join(", ",
+                variant.Attributes.Select(a => $"{a.Key}: {a.Value}"));
+
+            // Create cart item
+            var cartItem = new CartItemReadModel
             {
                 Id = item.Id,
                 ProductId = item.ProductId,
                 ProductVariantId = item.ProductVariantId,
                 Quantity = item.Quantity,
                 ProductName = product.Name,
-                OriginalPrice = product.OriginalPrice,
-                SalePrice = product.SalePrice,
-                ImageUrl = product.ImageUrl,
-                AttributesDescription = product.AttributesDescription
+                OriginalPrice = variant.OriginalPrice,
+                SalePrice = variant.SalePrice,
+                ImageUrl = variant.ImageUrl,
+                AttributesDescription = attributesDescription
             };
-        }).ToList();
 
+            validCartItems.Add(cartItem);
+        }
+
+        // Create cart read model
         var cartReadModel = new CartReadModel
         {
             Id = cart.Id,
             OwnerId = cart.OwnerId,
-            Items = cartItems
+            Items = validCartItems
         };
 
         return Result.Ok(cartReadModel);

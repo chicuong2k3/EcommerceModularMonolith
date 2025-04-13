@@ -1,6 +1,4 @@
-﻿using FluentResults;
-
-namespace Catalog.Domain.ProductAggregate;
+﻿namespace Catalog.Domain.ProductAggregate;
 
 public record Image
 {

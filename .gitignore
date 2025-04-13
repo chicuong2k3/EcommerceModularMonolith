@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+Presentation/Webapp/tw4cli.exe
+Presentation/Webapp/Webapp/node_modules/
+README.md

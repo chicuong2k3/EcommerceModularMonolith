@@ -1,6 +1,8 @@
 ﻿using Catalog.Application.EventHandlers.IntegrationEvents;
+using Catalog.Contracts;
 using Catalog.Infrastructure.Persistence;
 using Catalog.Infrastructure.Persistence.Repositories;
+using Catalog.Infrastructure.Services;
 using Common.Infrastructure.Inbox;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,8 @@ public static class ServicesRegistrator
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductAttributeRepository, ProductAttributeRepository>();
+
+        services.AddScoped<IProductService, ProductService>();
     }
 
     public static void ConfigureConsumers(this IRegistrationConfigurator registrationConfiguration)

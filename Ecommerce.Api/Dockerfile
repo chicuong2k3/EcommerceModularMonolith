@@ -13,22 +13,24 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Ecommerce.Api/Ecommerce.Api.csproj", "Ecommerce.Api/"]
-COPY ["Catalog/Catalog.ApiContracts/Catalog.ApiContracts.csproj", "Catalog/Catalog.ApiContracts/"]
-COPY ["Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj", "Catalog/Catalog.Infrastructure/"]
+COPY ["Billing/Billing.ApiContracts/Billing.ApiContracts.csproj", "Billing/Billing.ApiContracts/"]
+COPY ["Billing/Billing.Infrastructure/Billing.Infrastructure.csproj", "Billing/Billing.Infrastructure/"]
 COPY ["Common/Common.Infrastructure/Common.Infrastructure/Common.Infrastructure.csproj", "Common/Common.Infrastructure/Common.Infrastructure/"]
 COPY ["Common/Common.Application/Common.Application.csproj", "Common/Common.Application/"]
 COPY ["Common/Common.Domain/Common.Domain.csproj", "Common/Common.Domain/"]
-COPY ["Catalog/Catalog.Application/Catalog.Application.csproj", "Catalog/Catalog.Application/"]
+COPY ["Billing/Billing.Application/Billing.Application.csproj", "Billing/Billing.Application/"]
 COPY ["Ordering/Ordering.Contracts/Ordering.Contracts.csproj", "Ordering/Ordering.Contracts/"]
+COPY ["Billing/Billing.Domain/Billing.Domain.csproj", "Billing/Billing.Domain/"]
+COPY ["Catalog/Catalog.ApiContracts/Catalog.ApiContracts.csproj", "Catalog/Catalog.ApiContracts/"]
+COPY ["Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj", "Catalog/Catalog.Infrastructure/"]
+COPY ["Catalog/Catalog.Application/Catalog.Application.csproj", "Catalog/Catalog.Application/"]
+COPY ["Catalog/Catalog.Contracts/Catalog.Contracts.csproj", "Catalog/Catalog.Contracts/"]
 COPY ["Catalog/Catalog.Domain/Catalog.Domain.csproj", "Catalog/Catalog.Domain/"]
 COPY ["Ordering/Ordering.ApiContracts/Ordering.ApiContracts.csproj", "Ordering/Ordering.ApiContracts/"]
 COPY ["Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj", "Ordering/Ordering.Infrastructure/"]
 COPY ["Ordering/Ordering.Application/Ordering.Application.csproj", "Ordering/Ordering.Application/"]
+COPY ["Billing/Billing.Contracts/Billing.Contracts.csproj", "Billing/Billing.Contracts/"]
 COPY ["Ordering/Ordering.Domain/Ordering.Domain.csproj", "Ordering/Ordering.Domain/"]
-COPY ["Promotion/Promotion.ApiContracts/Promotion.ApiContracts.csproj", "Promotion/Promotion.ApiContracts/"]
-COPY ["Promotion/Promotion.Infrastructure/Promotion.Infrastructure.csproj", "Promotion/Promotion.Infrastructure/"]
-COPY ["Promotion/Promotion.Application/Promotion.Application.csproj", "Promotion/Promotion.Application/"]
-COPY ["Promotion/Promotion.Domain/Promotion.Domain.csproj", "Promotion/Promotion.Domain/"]
 RUN dotnet restore "./Ecommerce.Api/Ecommerce.Api.csproj"
 COPY . .
 WORKDIR "/src/Ecommerce.Api"

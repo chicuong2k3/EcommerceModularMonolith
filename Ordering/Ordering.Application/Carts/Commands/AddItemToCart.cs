@@ -1,4 +1,5 @@
-﻿using Ordering.Domain.OrderAggregate.Errors;
+﻿using Catalog.Contracts;
+using Ordering.Domain.OrderAggregate.Errors;
 
 namespace Ordering.Application.Carts.Commands;
 
@@ -12,7 +13,7 @@ public record AddItemDto(
 
 internal sealed class AddItemToCartHandler(
     ICartRepository cartRepository,
-    IProductRepository productRepository)
+    IProductService productService)
     : ICommandHandler<AddItemToCart>
 {
     public async Task<Result> Handle(AddItemToCart command, CancellationToken cancellationToken)
@@ -26,16 +27,22 @@ internal sealed class AddItemToCartHandler(
 
         foreach (var item in command.Items)
         {
-            var product = await productRepository.GetProductAsync(item.ProductId, item.ProductVariantId, cancellationToken);
+            var product = await productService.GetProductByIdAsync(item.ProductId, cancellationToken);
 
             if (product == null)
             {
                 return Result.Fail(new NotFoundError($"Product with id {item.ProductId} not found."));
             }
 
-            if (product.Quantity < item.Quantity)
+            var productVariant = product.Variants.FirstOrDefault(v => v.VariantId == item.ProductVariantId);
+            if (productVariant == null)
             {
-                return Result.Fail(new OutOfStockError(product.Name, product.Quantity, item.Quantity));
+                return Result.Fail(new NotFoundError($"Product variant with id {item.ProductVariantId} not found."));
+            }
+
+            if (productVariant.Quantity < item.Quantity)
+            {
+                return Result.Fail(new OutOfStockError(product.Name, productVariant.Quantity, item.Quantity));
             }
 
             var addItemResult = await cart.AddItemAsync(

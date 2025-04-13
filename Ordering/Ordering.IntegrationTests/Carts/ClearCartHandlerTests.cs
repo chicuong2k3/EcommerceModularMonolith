@@ -1,6 +1,5 @@
 using Ordering.Application.Carts.Commands;
 using Ordering.Domain.CartAggregate;
-using Ordering.Domain.ProductAggregate;
 using Ordering.IntegrationTests.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,12 +8,10 @@ namespace Ordering.IntegrationTests.Carts;
 public class ClearCartHandlerTests : IntegrationTestBase
 {
     private readonly ICartRepository cartRepository;
-    private readonly IProductRepository productRepository;
 
     public ClearCartHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
         cartRepository = serviceScope.ServiceProvider.GetRequiredService<ICartRepository>();
-        productRepository = serviceScope.ServiceProvider.GetRequiredService<IProductRepository>();
     }
 
     [Fact]
@@ -23,17 +20,11 @@ public class ClearCartHandlerTests : IntegrationTestBase
         // Arrange
         var ownerId = Guid.NewGuid();
 
-        // Create products
+        // Create product identifiers
         var product1Id = Guid.NewGuid();
         var variant1Id = Guid.NewGuid();
         var product2Id = Guid.NewGuid();
         var variant2Id = Guid.NewGuid();
-
-        await productRepository.AddProductAsync(
-            new Product(product1Id, variant1Id, "Product 1", 10.0m, 10, "imageUrl1", 8.0m, "description1"));
-
-        await productRepository.AddProductAsync(
-            new Product(product2Id, variant2Id, "Product 2", 15.0m, 15, "imageUrl2", 8.0m, "description2"));
 
         // Create cart with items
         var cart = new Cart(ownerId);
@@ -126,9 +117,6 @@ public class ClearCartHandlerTests : IntegrationTestBase
         var cart = new Cart(ownerId);
         var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
-
-        await productRepository.AddProductAsync(
-            new Product(productId, variantId, "Test Product", 10.0m, 10, "imageUrl", 8.0m, "description"));
 
         await cart.AddItemAsync(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
