@@ -1,0 +1,43 @@
+﻿@page "/create-category"
+
+@inject CategoryListState CategoryListState
+
+<Card>
+    <CardContent>
+        <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="flex flex-col">
+                <div class="w-full">
+                    <Input Label="Tên danh mục" @bind-Value="@model.Name" />
+                    <ValidationMessage For="@(() => model.Name)" class="text-xs text-red-500 mt-2" />
+                </div>
+
+                <div class="w-full">
+                    <Select Label="Danh mục cha" Items="@CategoryListState.Categories" Placeholder="Chọn danh mục cha" Display="x => x.Name"
+                            TItem="CategoryResponse"
+                            SelectedItem="@selectedCategory" OnItemSelect="x => selectedCategory = x" />
+                </div>
+
+                <Button Action="ButtonAction.Submit"
+                        Type="@(isLoading ? ButtonType.Loading : ButtonType.Primary)"
+                        Disabled="isLoading"
+                        Text="Tạo"
+                        Class="flex justify-center"
+                        Width="100%" />
+            </div>
+
+        </EditForm>
+    </CardContent>
+</Card>
+
+
+@code {
+    CreateCategoryRequest model = new();
+    bool isLoading = false;
+    CategoryResponse? selectedCategory = null;
+
+    private void HandleValidSubmit()
+    {
+
+    }
+}

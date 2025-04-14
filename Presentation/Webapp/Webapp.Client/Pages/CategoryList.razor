@@ -1,0 +1,224 @@
+﻿@page "/category"
+@inherits TimeWarp.State.TimeWarpStateComponent
+@using Sysinfocus.AspNetCore.Components
+@using Webapp.Client.Features.Category
+@using Catalog.ApiContracts.Responses
+@using Catalog.ApiContracts.Requests
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Categories</PageTitle>
+
+<div class="container mx-auto py-10">
+    <Card Style="max-width: 1000px; margin: 0 auto;">
+        <CardHeader>
+            <h3 class="large">Category Management</h3>
+            <p>View and manage product categories</p>
+        </CardHeader>
+        <CardContent>
+            @if (CategoryListState.IsLoading)
+            {
+                <div class="flex aic jcc" style="height: 200px;">
+                    <div class="flex-col g4 aic">
+                        <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+                        <p>Loading categories...</p>
+                    </div>
+                </div>
+            }
+            else if (CategoryListState.Categories.Count == 0)
+            {
+                <div class="flex-col aic jcc py-10 px-4 g4 border rounded-md">
+                    <div class="rounded-full bg-muted p-3">
+                        <Icon Name="list" Size="24px" />
+                    </div>
+                    <h3 class="large">No categories found</h3>
+                    <p class="text-center muted">You haven't created any categories yet.</p>
+                    <Button Text="Add your first category" Type="ButtonType.Outline" OnClick="OpenAddCategoryDialog" />
+                </div>
+            }
+            else
+            {
+                <div class="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Sub Categories</th>
+                                <th class="tar">Actions</th>
+                            </tr>
+                        </TableHeader>
+                        <TableBody>
+                            @foreach (var category in CategoryListState.Categories)
+                            {
+                                <tr>
+                                    <td class="code-text" Style="font-size: 12px;">@category.Id</td>
+                                    <td>@category.Name</td>
+                                    <td>
+                                        <Badge Text="@category.SubCategories.Count.ToString()" Type="BadgeType.Secondary" />
+                                    </td>
+                                    <td class="tar">
+                                        <div class="flex jcfe g2">
+                                            <Button Text="Edit" Type="ButtonType.Outline" Size="ButtonSize.Small" OnClick="() => OpenEditCategoryDialog(category)" />
+                                            <Button Text="Delete" Type="ButtonType.Destructive" Size="ButtonSize.Small" OnClick="() => OpenDeleteConfirmation(category)" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </TableBody>
+                    </Table>
+                </div>
+            }
+        </CardContent>
+        <CardFooter>
+            <div class="flex jcsb aic w-full">
+                <div class="muted" style="font-size: 14px;">
+                    Total Categories: @(CategoryListState.Categories?.Count ?? 0)
+                </div>
+                <Button Text="Add Category" Type="ButtonType.Primary" Icon="add" OnClick="OpenAddCategoryDialog" />
+            </div>
+        </CardFooter>
+    </Card>
+
+    <Dialog Show="@showAddDialog" OnClose="CloseAddCategoryDialog">
+        <Header>
+            <div class="flex-col g4">
+                <p class="large">Add New Category</p>
+                <p class="muted">Create a new product category</p>
+            </div>
+        </Header>
+        <Content>
+            <EditForm Model="newCategory" OnValidSubmit="AddCategory">
+                <div class="flex-col g4 py-4">
+                    <div class="flex g4 aic">
+                        <span style="width: 100px; text-align: right">Name</span>
+                        <Input TItem="string" Id="name" @bind-Value="newCategory.Name" Placeholder="Category name" />
+                    </div>
+                </div>
+                <div class="flex jcfe g2 mt-4">
+                    <Button Text="Cancel" Type="ButtonType.Outline" OnClick="CloseAddCategoryDialog" />
+                    <Button Text="Save" Type="ButtonType.Primary" Action="ButtonAction.Submit" />
+                </div>
+            </EditForm>
+        </Content>
+    </Dialog>
+
+    <Dialog Show="@showEditDialog" OnClose="CloseEditCategoryDialog">
+        <Header>
+            <div class="flex-col g4">
+                <p class="large">Edit Category</p>
+                <p class="muted">Update category details</p>
+            </div>
+        </Header>
+        <Content>
+            <EditForm Model="editCategory" OnValidSubmit="UpdateCategory">
+                <div class="flex-col g4 py-4">
+                    <div class="flex g4 aic">
+                        <span style="width: 100px; text-align: right">Name</span>
+                        <Input TItem="string" Id="editName" @bind-Value="editCategory.Name" Placeholder="Category name" />
+                    </div>
+                </div>
+                <div class="flex jcfe g2 mt-4">
+                    <Button Text="Cancel" Type="ButtonType.Outline" OnClick="CloseEditCategoryDialog" />
+                    <Button Text="Update" Type="ButtonType.Primary" Action="ButtonAction.Submit" />
+                </div>
+            </EditForm>
+        </Content>
+    </Dialog>
+
+    <Dialog Show="@showDeleteDialog" OnClose="CloseDeleteConfirmation">
+        <Header>
+            <div class="flex-col g4">
+                <p class="large">Delete Category</p>
+                <p class="muted">Are you sure you want to delete this category?</p>
+            </div>
+        </Header>
+        <Content>
+            <div class="flex-col g4 py-4">
+                <Alert Type="AlertType.Destructive" Title="Warning">
+
+                </Alert>
+            </div>
+            <div class="flex jcfe g2 mt-4">
+                <Button Text="Cancel" Type="ButtonType.Outline" OnClick="CloseDeleteConfirmation" />
+                <Button Text="Delete" Type="ButtonType.Destructive" OnClick="DeleteCategory" />
+            </div>
+        </Content>
+    </Dialog>
+</div>
+
+@code {
+    CategoryListState CategoryListState => GetState<CategoryListState>();
+
+    private bool showAddDialog = false;
+    private bool showEditDialog = false;
+    private bool showDeleteDialog = false;
+    private CreateCategoryRequest newCategory = new();
+    private CategoryResponse categoryToDelete;
+    private CategoryResponse editCategory;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await CategoryListState.FetchCategories();
+    }
+
+    private void OpenAddCategoryDialog()
+    {
+        newCategory = new();
+        showAddDialog = true;
+    }
+
+    private void CloseAddCategoryDialog()
+    {
+        showAddDialog = false;
+    }
+
+    private async Task AddCategory()
+    {
+        //await CategoryListState.AddCategory(newCategory);
+        showAddDialog = false;
+    }
+
+    private void OpenEditCategoryDialog(CategoryResponse category)
+    {
+        editCategory = new CategoryResponse
+            {
+                Id = category.Id,
+                Name = category.Name,
+                SubCategories = category.SubCategories
+            };
+        showEditDialog = true;
+    }
+
+    private void CloseEditCategoryDialog()
+    {
+        showEditDialog = false;
+    }
+
+    private async Task UpdateCategory()
+    {
+        //await CategoryListState.UpdateCategory(editCategory);
+        showEditDialog = false;
+    }
+
+    private void OpenDeleteConfirmation(CategoryResponse category)
+    {
+        categoryToDelete = category;
+        showDeleteDialog = true;
+    }
+
+    private void CloseDeleteConfirmation()
+    {
+        showDeleteDialog = false;
+        categoryToDelete = null;
+    }
+
+    private async Task DeleteCategory()
+    {
+        if (categoryToDelete != null)
+        {
+            await CategoryListState.DeleteCategory(categoryToDelete.Id);
+            CloseDeleteConfirmation();
+        }
+    }
+}

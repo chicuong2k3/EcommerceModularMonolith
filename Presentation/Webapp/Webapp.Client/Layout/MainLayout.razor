@@ -2,8 +2,72 @@
 @inject Initialization init
 
 <div @onclick="init.HandleMainLayoutClickEvent">
-    @Body
+    <div class="flex g0 mt1 aifs" style="overflow: auto; height: 600px; border-radius: 0.5rem; border: 1px solid var(--primary-border)">
+
+        <Sidebar Items="@sideBarItems" Show="@sideBarVisible" OnMenuClick="HandleMenu" OnContextMenuClick="HandleContextMenu"
+                 BackgroundLight="#FFE0F766" BackgroundDark="#3F005666" HoverBackground="purple" HoverForeground="white"
+                 IsSimpleSideBar="false">
+            <SidebarHeader>
+                <div class="flex aic g8" style="padding: 0.5rem 1rem">
+                    <Icon Name="sensors" />
+                    <h4 class="large">Acme Inc.</h4>
+                </div>
+            </SidebarHeader>
+        </Sidebar>
+
+        <div style="padding: 0.75rem 1rem; min-width: 400px; overflow: auto">
+
+            <Icon Name="dock_to_right" Size="20px" Style="margin-bottom: 3rem" Color="royalblue"
+                  OnClick="@(() => sideBarVisible = !sideBarVisible)" Tooltip="Toggle Sidebar" />
+
+            @Body
+        </div>
+    </div>
 </div>
+
+@code
+{
+    private bool sideBarVisible;
+    private SideBarItem? selectedMenu;
+    private MenuItemOption? selectedContextMenu;
+
+    private List<SideBarItem> sideBarItems = [
+        new("Music",1,0,"Albums","queue_music"),
+    new("Music",2,1,"Album - 1"),
+    new("Music",3,1,"Album - 2"),
+    new("Music",4,1,"Album - 3"),
+    new("Music",5,0,"Artists","person"),
+    new("Music",6,5,"Artist - 1", "person"),
+    new("Music",61,6,"Song - 1"),
+    new("Music",62,6,"Song - 2"),
+    new("Music",63,6,"Song - 3", "favorite"),
+    new("Music",630,63,"Favorite Song") { Disabled = true },
+    new("Music",631,63,"Popular Song"),
+    new("Music",7,5,"Artist - 2","person"),
+    new("Contact",8,0,"Visit Website", "globe") { ContextMenuItems = [
+                new("https://blazor.net"),
+                new("https://blazor.art"),
+                new("https://github.com"),
+            ]},
+    new("Contact",9,0,"Share", "share") { ContextMenuItems = [
+                new("WhatsApp"),
+                new("Share via Bluetooth")
+            ]
+        },
+    ];
+
+    private void HandleMenu(SideBarItem menu)
+    {
+        selectedMenu = menu;
+        selectedContextMenu = null;
+    }
+
+    private void HandleContextMenu(MenuItemOption menu)
+    {
+        selectedContextMenu = menu;
+        selectedMenu = null;
+    }
+}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
