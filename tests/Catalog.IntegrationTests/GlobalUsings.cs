@@ -1,0 +1,9 @@
+﻿global using Catalog.Core.Commands;
+global using Catalog.Core.Entities;
+global using Catalog.Core.ValueObjects;
+global using Catalog.Core.Repositories;
+global using Catalog.Core.Queries;
+global using Catalog.IntegrationTests.Abstractions;
+global using Microsoft.Extensions.DependencyInjection;
+global using FluentResults;
+global using Shared.Abstractions.Core;

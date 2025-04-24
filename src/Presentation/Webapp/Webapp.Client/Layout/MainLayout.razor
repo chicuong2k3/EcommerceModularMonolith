@@ -1,0 +1,22 @@
+﻿@using Webapp.Client.Components
+@inherits LayoutComponentBase
+
+<div class="main-layout">
+    <div class="flex flex-row-reverse">
+        <NavMain />
+    </div>
+
+    <div class="flex flex-row">
+        <AppSidebar IsVisible="sideBarVisible" />
+        @Body
+    </div>
+</div>
+
+@code {
+    private bool sideBarVisible = true;
+
+    private void ToggleSidebar()
+    {
+        sideBarVisible = !sideBarVisible;
+    }
+}

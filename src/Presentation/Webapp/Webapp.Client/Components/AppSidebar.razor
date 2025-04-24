@@ -1,0 +1,36 @@
+﻿<div class="sidebar @(IsVisible ? "" : "hidden")">
+    <h4>Discover</h4>
+    <div class="sidebar-menu-items">
+        <Button Icon="play_circle" Text="Listen Now" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="grid_view" Text="Browser" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="sensors" Text="Radio" Type="ButtonType.Ghost" Width="auto" />
+    </div>
+    <h4>Library</h4>
+    <div class="sidebar-menu-items">
+        <Button Icon="queue_music" Text="Playlists" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="music_note" Text="Songs" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="person" Text="Made for You" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="mic" Text="Artists" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="newsstand" Text="Albums" Type="ButtonType.Ghost" Width="auto" />
+    </div>
+    <h4>Playlists</h4>
+    <div class="sidebar-menu-items">
+        <Button Icon="queue_music" Text="Recently Added" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Recently Played" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Top Songs" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Top Albums" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Top Artists" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Logic Discography" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Bedtime Beats" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Feeling Happy" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="I miss Y2K Pop" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Runtober" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Mellow Days" Type="ButtonType.Ghost" Width="auto" />
+        <Button Icon="queue_music" Text="Eminem Essentials" Type="ButtonType.Ghost" Width="auto" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+}
