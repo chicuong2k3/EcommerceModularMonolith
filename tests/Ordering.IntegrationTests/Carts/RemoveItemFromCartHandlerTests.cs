@@ -1,70 +1,43 @@
+using Ordering.Core.Persistence;
+using Shared.Abstractions.Core;
+
 namespace Ordering.IntegrationTests.Carts;
 
 public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 {
     private readonly ICartRepository cartRepository;
+    private readonly OrderingDbContext dbContext;
 
     public RemoveItemFromCartHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
         cartRepository = serviceScope.ServiceProvider.GetRequiredService<ICartRepository>();
+        dbContext = serviceScope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+
+        // Clear any existing carts to prevent conflicts
+        ClearDatabase().GetAwaiter().GetResult();
+    }
+
+    private async Task ClearDatabase()
+    {
+        // Remove any existing carts
+        var existingCarts = await dbContext.Set<Cart>().ToListAsync();
+        if (existingCarts.Any())
+        {
+            dbContext.Set<Cart>().RemoveRange(existingCarts);
+            await dbContext.SaveChangesAsync();
+        }
     }
 
     [Fact]
-    public async Task Handle_ShouldRemoveItem_FromExistingCart()
+    public async Task Handle_Success_RemovesItem_WhenQuantityMatchesExactly()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
-
-        // Create product identifiers
-        var product1Id = Guid.NewGuid();
-        var variant1Id = Guid.NewGuid();
-        var product2Id = Guid.NewGuid();
-        var variant2Id = Guid.NewGuid();
-
-        // Create cart with items
-        var cart = new Cart(ownerId);
-        await cart.AddItemAsync(product1Id, variant1Id, 2);
-        await cart.AddItemAsync(product2Id, variant2Id, 3);
-        await cartRepository.UpsertAsync(cart);
-
-        // Verify cart has both items initially
-        var initialCart = await cartRepository.GetAsync(ownerId);
-        Assert.NotNull(initialCart);
-        Assert.Equal(2, initialCart.Items.Count);
-
-        // Create command to remove the first item
-        var command = new RemoveItemFromCart(ownerId, variant1Id, 2);
-
-        // Act
-        var result = await mediator.Send(command);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-
-        // Verify item was removed
-        var updatedCart = await cartRepository.GetAsync(ownerId);
-        Assert.NotNull(updatedCart);
-        Assert.Single(updatedCart.Items);
-
-        // Check that the remaining item is the second one
-        var remainingItem = updatedCart.Items.Single();
-        Assert.Equal(product2Id, remainingItem.ProductId);
-        Assert.Equal(variant2Id, remainingItem.ProductVariantId);
-        Assert.Equal(3, remainingItem.Quantity);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldRemoveLastItem_AndLeaveCartEmpty()
-    {
-        // Arrange
-        var ownerId = Guid.NewGuid();
-
-        // Create product
         var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
 
         // Create cart with one item
-        var cart = new Cart(ownerId);
+        var cart = new Cart(Guid.NewGuid(), ownerId);
         await cart.AddItemAsync(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
@@ -82,18 +55,50 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify cart is empty but still exists
         var updatedCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(updatedCart);
         Assert.Empty(updatedCart.Items);
     }
 
     [Fact]
-    public async Task Handle_ShouldFail_WhenCartDoesNotExist()
+    public async Task Handle_Success_ReducesQuantity_WhenRemovingPartialAmount()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var variantId = Guid.NewGuid();
+
+        // Create cart with item quantity of 3
+        var cart = new Cart(Guid.NewGuid(), ownerId);
+        await cart.AddItemAsync(productId, variantId, 3);
+        await cartRepository.UpsertAsync(cart);
+
+        // Verify initial quantity
+        var initialCart = await cartRepository.GetAsync(ownerId);
+        Assert.NotNull(initialCart);
+        Assert.Single(initialCart.Items);
+        Assert.Equal(3, initialCart.Items.First().Quantity);
+
+        // Create command to remove 2 items
+        var command = new RemoveItemFromCart(ownerId, variantId, 2);
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        var updatedCart = await cartRepository.GetAsync(ownerId);
+        Assert.NotNull(updatedCart);
+        Assert.Single(updatedCart.Items);
+        Assert.Equal(1, updatedCart.Items.First().Quantity);
+    }
+
+    [Fact]
+    public async Task Handle_Failure_CartDoesNotExist()
     {
         // Arrange
         var nonExistentOwnerId = Guid.NewGuid();
-        var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
 
         // Verify cart doesn't exist
@@ -108,28 +113,24 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is NotFoundError);
+        Assert.Contains(result.Errors, error => error is NotFoundError);
     }
 
     [Fact]
-    public async Task Handle_ShouldFail_WhenItemNotInCart()
+    public async Task Handle_Failure_ItemNotInCart()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
-
-        // Create product identifiers
-        var existingProductId = Guid.NewGuid();
-        var existingVariantId = Guid.NewGuid();
-
-        // Create cart with the product
-        var cart = new Cart(ownerId);
-        await cart.AddItemAsync(existingProductId, existingVariantId, 1);
-        await cartRepository.UpsertAsync(cart);
-
-        // Create non-existent product/variant IDs
+        var productId = Guid.NewGuid();
+        var variantId = Guid.NewGuid();
         var nonExistentVariantId = Guid.NewGuid();
 
-        // Create command to remove non-existent item
+        // Create cart with one item
+        var cart = new Cart(Guid.NewGuid(), ownerId);
+        await cart.AddItemAsync(productId, variantId, 1);
+        await cartRepository.UpsertAsync(cart);
+
+        // Create command with non-existent variant ID
         var command = new RemoveItemFromCart(ownerId, nonExistentVariantId, 1);
 
         // Act
@@ -137,44 +138,42 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is NotFoundError);
+        Assert.Contains(result.Errors, error => error is NotFoundError);
 
-        // Verify cart was not modified
-        var updatedCart = await cartRepository.GetAsync(ownerId);
-        Assert.NotNull(updatedCart);
-        Assert.Single(updatedCart.Items);
-        Assert.Equal(existingProductId, updatedCart.Items.First().ProductId);
+        // Verify cart still has the original item
+        var unchangedCart = await cartRepository.GetAsync(ownerId);
+        Assert.NotNull(unchangedCart);
+        Assert.Single(unchangedCart.Items);
+        Assert.Equal(variantId, unchangedCart.Items.First().ProductVariantId);
     }
 
     [Fact]
-    public async Task Handle_ShouldPreserveCartId_WhenRemovingItems()
+    public async Task Handle_Failure_RemovingMoreThanAvailable()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
-
-        // Create product
         var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
 
-        // Create cart with item
-        var cart = new Cart(ownerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        // Create cart with item quantity of 2
+        var cart = new Cart(Guid.NewGuid(), ownerId);
+        await cart.AddItemAsync(productId, variantId, 2);
         await cartRepository.UpsertAsync(cart);
 
-        var originalCartId = cart.Id;
-
-        // Create command
-        var command = new RemoveItemFromCart(ownerId, variantId, 1);
+        // Create command to remove 3 items
+        var command = new RemoveItemFromCart(ownerId, variantId, 3);
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
-        Assert.True(result.IsSuccess);
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, error => error is ValidationError);
 
-        // Verify cart ID was preserved
-        var updatedCart = await cartRepository.GetAsync(ownerId);
-        Assert.NotNull(updatedCart);
-        Assert.Equal(originalCartId, updatedCart.Id);
+        // Verify cart item quantity remains unchanged
+        var unchangedCart = await cartRepository.GetAsync(ownerId);
+        Assert.NotNull(unchangedCart);
+        Assert.Single(unchangedCart.Items);
+        Assert.Equal(2, unchangedCart.Items.First().Quantity);
     }
 }

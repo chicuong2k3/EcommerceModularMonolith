@@ -10,15 +10,18 @@ public class UpdateProductInfoTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateProduct_Success_NameAndDescription()
+    public async Task UpdateProductInfo_Success_UpdateNameAndDescription()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var originalName = faker.Commerce.ProductName();
         var originalDescription = faker.Commerce.ProductDescription();
-        var createResult = await mediator.Send(new CreateProduct(originalName, originalDescription, null));
-        Assert.True(createResult.IsSuccess);
+        await mediator.Send(new CreateProduct(
+            productId,
+            originalName, 
+            originalDescription, 
+            null));
 
-        var productId = createResult.Value.Id;
         var newName = faker.Commerce.ProductName();
         var newDescription = faker.Commerce.ProductDescription();
 
@@ -43,33 +46,34 @@ public class UpdateProductInfoTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateProduct_Success_ChangeCategory()
+    public async Task UpdateProductInfo_Success_ChangeCategory()
     {
         // Arrange
         // Create original category
+        var originalCategoryId = Guid.NewGuid();
         var originalCategoryName = faker.Commerce.Categories(1)[0];
-        var originalCategoryResult = await mediator.Send(new CreateCategory(originalCategoryName, null));
-        Assert.True(originalCategoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(originalCategoryId, originalCategoryName, null));
 
         // Create product with original category
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createResult = await mediator.Send(new CreateProduct(
+        await mediator.Send(new CreateProduct(
+            productId,
             productName,
             faker.Commerce.ProductDescription(),
-            originalCategoryResult.Value.Id));
-        Assert.True(createResult.IsSuccess);
+            originalCategoryId));
 
         // Create new category
+        var newCategoryId = Guid.NewGuid();
         var newCategoryName = faker.Commerce.Categories(1)[0] + " New";
-        var newCategoryResult = await mediator.Send(new CreateCategory(newCategoryName, null));
-        Assert.True(newCategoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(newCategoryId, newCategoryName, null));
 
         // Update product with new category
         var command = new UpdateProductInfo(
-            createResult.Value.Id,
+            productId,
             productName,  // Same name
             null,  // No description change
-            newCategoryResult.Value.Id  // New category
+            newCategoryId  // New category
         );
 
         // Act
@@ -79,31 +83,32 @@ public class UpdateProductInfoTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify persistence
-        var updatedProduct = await productRepository.GetByIdAsync(createResult.Value.Id);
+        var updatedProduct = await productRepository.GetByIdAsync(productId);
         Assert.NotNull(updatedProduct);
-        Assert.Equal(newCategoryResult.Value.Id, updatedProduct.CategoryId);
+        Assert.Equal(newCategoryId, updatedProduct.CategoryId);
     }
 
     [Fact]
-    public async Task UpdateProduct_Success_RemoveCategory()
+    public async Task UpdateProductInfo_Success_RemoveCategory()
     {
         // Arrange
         // Create category
+        var categoryId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        Assert.True(categoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
 
         // Create product with category
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createResult = await mediator.Send(new CreateProduct(
+        await mediator.Send(new CreateProduct(
+            productId,
             productName,
             faker.Commerce.ProductDescription(),
-            categoryResult.Value.Id));
-        Assert.True(createResult.IsSuccess);
+            categoryId));
 
         // Update product to remove category
         var command = new UpdateProductInfo(
-            createResult.Value.Id,
+            productId,
             productName,  // Same name
             null,  // No description change
             null  // Remove category
@@ -116,13 +121,13 @@ public class UpdateProductInfoTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify persistence
-        var updatedProduct = await productRepository.GetByIdAsync(createResult.Value.Id);
+        var updatedProduct = await productRepository.GetByIdAsync(productId);
         Assert.NotNull(updatedProduct);
         Assert.Null(updatedProduct.CategoryId);
     }
 
     [Fact]
-    public async Task UpdateProduct_Failure_ProductNotFound()
+    public async Task UpdateProductInfo_Failure_ProductNotFound()
     {
         // Arrange
         var nonExistentProductId = Guid.NewGuid();
@@ -141,20 +146,21 @@ public class UpdateProductInfoTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateProduct_Failure_CategoryNotFound()
+    public async Task UpdateProductInfo_Failure_CategoryNotFound()
     {
         // Arrange
         // Create product without category
-        var createResult = await mediator.Send(new CreateProduct(
+        var productId = Guid.NewGuid();
+        await mediator.Send(new CreateProduct(
+            productId,
             faker.Commerce.ProductName(),
             faker.Commerce.ProductDescription(),
             null));
-        Assert.True(createResult.IsSuccess);
 
         // Try to update with non-existent category
         var nonExistentCategoryId = Guid.NewGuid();
         var command = new UpdateProductInfo(
-            createResult.Value.Id,
+            productId,
             faker.Commerce.ProductName(),
             null,
             nonExistentCategoryId);
@@ -168,17 +174,18 @@ public class UpdateProductInfoTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateProduct_Failure_EmptyName()
+    public async Task UpdateProductInfo_Failure_EmptyName()
     {
         // Arrange
-        var createResult = await mediator.Send(new CreateProduct(
+        var productId = Guid.NewGuid();
+        await mediator.Send(new CreateProduct(
+            productId,
             faker.Commerce.ProductName(),
             faker.Commerce.ProductDescription(),
             null));
-        Assert.True(createResult.IsSuccess);
 
         var command = new UpdateProductInfo(
-            createResult.Value.Id,
+            productId,
             "", // Empty name should fail
             faker.Commerce.ProductDescription(),
             null);

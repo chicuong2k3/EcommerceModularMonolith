@@ -5,19 +5,19 @@ using Shared.Abstractions.Application;
 
 namespace Catalog.Core.Commands;
 
-public record CreateAttribute(string Name) : ICommand<ProductAttribute>;
+public record CreateAttribute(Guid Id, string Name) : ICommand;
 
 internal class CreateAttributeHandler(IProductAttributeRepository productAttributeRepository)
-    : ICommandHandler<CreateAttribute, ProductAttribute>
+    : ICommandHandler<CreateAttribute>
 {
-    public async Task<Result<ProductAttribute>> Handle(CreateAttribute command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(CreateAttribute command, CancellationToken cancellationToken)
     {
-        var result = ProductAttribute.Create(command.Name);
+        var result = ProductAttribute.Create(command.Id, command.Name);
         if (result.IsFailed)
-            return result;
+            return Result.Fail(result.Errors);
 
         var productAttribute = result.Value;
         await productAttributeRepository.AddAsync(productAttribute, cancellationToken);
-        return result;
+        return Result.Ok();
     }
 }

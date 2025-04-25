@@ -1,3 +1,5 @@
+using Shared.Abstractions.Core;
+
 namespace Catalog.IntegrationTests.ProductAttributes;
 
 public class CreateAttributeTests : IntegrationTestBase
@@ -13,16 +15,15 @@ public class CreateAttributeTests : IntegrationTestBase
     public async Task CreateAttribute_Success()
     {
         // Arrange
+        var attributeId = Guid.NewGuid();
         var attributeName = "color";
-        var command = new CreateAttribute(attributeName);
+        var command = new CreateAttribute(attributeId, attributeName);
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(attributeName, result.Value.Name);
 
         // Verify persistence
         var savedAttribute = await productAttributeRepository.GetByNameAsync(attributeName);
@@ -34,16 +35,15 @@ public class CreateAttributeTests : IntegrationTestBase
     public async Task CreateAttribute_Success_DifferentCase()
     {
         // Arrange
+        var attributeId = Guid.NewGuid();
         var attributeName = "SIZE";
-        var command = new CreateAttribute(attributeName);
+        var command = new CreateAttribute(attributeId, attributeName);
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(attributeName.ToLower(), result.Value.Name);
 
         // Verify persistence
         var savedAttribute = await productAttributeRepository.GetByNameAsync(attributeName);
@@ -55,7 +55,7 @@ public class CreateAttributeTests : IntegrationTestBase
     public async Task CreateAttribute_Failure_EmptyName()
     {
         // Arrange
-        var command = new CreateAttribute("");
+        var command = new CreateAttribute(Guid.NewGuid(), "");
 
         // Act
         var result = await mediator.Send(command);

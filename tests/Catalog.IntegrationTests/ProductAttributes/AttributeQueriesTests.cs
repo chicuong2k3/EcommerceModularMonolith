@@ -16,7 +16,7 @@ public class AttributeQueriesTests : IntegrationTestBase
         var attributeNames = new[] { "Color", "Size", "Material", "Weight" };
         foreach (var name in attributeNames)
         {
-            await mediator.Send(new CreateAttribute(name));
+            await mediator.Send(new CreateAttribute(Guid.NewGuid(), name));
         }
 
         // Act
@@ -61,7 +61,7 @@ public class AttributeQueriesTests : IntegrationTestBase
     {
         // Arrange
         var attributeName = "TestAttribute";
-        await mediator.Send(new CreateAttribute(attributeName));
+        await mediator.Send(new CreateAttribute(Guid.NewGuid(), attributeName));
 
         // Act
         var query = new GetAttributeByName(attributeName);
@@ -93,7 +93,7 @@ public class AttributeQueriesTests : IntegrationTestBase
     {
         // Arrange
         var attributeName = "case-test";
-        await mediator.Send(new CreateAttribute(attributeName));
+        await mediator.Send(new CreateAttribute(Guid.NewGuid(), attributeName));
 
         // Act
         var query = new GetAttributeByName(attributeName.ToUpper());

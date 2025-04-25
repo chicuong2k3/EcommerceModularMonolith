@@ -20,25 +20,31 @@ public sealed class Product : AggregateRoot
     private List<Review> reviews = [];
     public IReadOnlyCollection<Review> Reviews => reviews.AsReadOnly();
 
-    private Product(string name,
+    private Product(
+        Guid id,
+        string name,
         string? description,
         Guid? categoryId)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         Name = name;
         Description = description;
         CategoryId = categoryId;
     }
 
     public static Result<Product> Create(
+        Guid id,
         string name,
         string? description,
         Guid? categoryId)
     {
+        if (id == Guid.Empty)
+            return Result.Fail(new ValidationError("Id is required."));
+
         if (string.IsNullOrWhiteSpace(name))
             return Result.Fail(new ValidationError("Name is required."));
 
-        var product = new Product(name, description, categoryId);
+        var product = new Product(id, name, description, categoryId);
 
         return Result.Ok(product);
     }

@@ -21,7 +21,9 @@ public class OrdersController : Controller
     [HttpPost]
     public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderRequest request)
     {
-        var result = await mediator.Send(new PlaceOrder(request.CustomerId,
+        var id = Guid.NewGuid();
+        var result = await mediator.Send(new PlaceOrder(id,
+            request.CustomerId,
                                                          request.Street,
                                                          request.Ward,
                                                          request.District,
@@ -34,9 +36,8 @@ public class OrdersController : Controller
         if (result.IsFailed)
             return result.ToActionResult();
 
-        //var getOrderResult = await mediator.Send(new GetOrderById(result.Value.Id));
-        return Ok();
-        //return CreatedAtAction(nameof(GetOrderById), new { id = result.Value.Id }, getOrderResult.ValueOrDefault);
+        var getOrderResult = await mediator.Send(new GetOrderById(id));
+        return CreatedAtAction(nameof(GetOrderById), new { id = id }, getOrderResult.ValueOrDefault);
     }
 
     [HttpPost("{id}/cancel")]

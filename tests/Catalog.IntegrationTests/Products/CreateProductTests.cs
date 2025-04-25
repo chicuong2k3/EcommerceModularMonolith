@@ -13,61 +13,58 @@ public class CreateProductTests : IntegrationTestBase
     public async Task CreateProduct_Success_NoCategory()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
         var description = faker.Commerce.ProductDescription();
-        var command = new CreateProduct(productName, description, null);
+        var command = new CreateProduct(productId, productName, description, null);
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(productName, result.Value.Name);
-        Assert.Equal(description, result.Value.Description);
-        Assert.Null(result.Value.CategoryId);
-        Assert.Empty(result.Value.Variants);
 
         // Verify persistence
-        var savedProduct = await productRepository.GetByIdAsync(result.Value.Id);
+        var savedProduct = await productRepository.GetByIdAsync(productId);
         Assert.NotNull(savedProduct);
         Assert.Equal(productName, savedProduct.Name);
         Assert.Equal(description, savedProduct.Description);
+        Assert.Null(savedProduct.CategoryId);
+        Assert.Empty(savedProduct.Variants);
     }
 
     [Fact]
     public async Task CreateProduct_Success_WithCategory()
     {
         // Arrange
+        var categoryId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        Assert.True(categoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
 
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
         var description = faker.Commerce.ProductDescription();
-        var command = new CreateProduct(productName, description, categoryResult.Value.Id);
+        var command = new CreateProduct(productId, productName, description, categoryId);
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(productName, result.Value.Name);
-        Assert.Equal(description, result.Value.Description);
-        Assert.Equal(categoryResult.Value.Id, result.Value.CategoryId);
 
         // Verify persistence
-        var savedProduct = await productRepository.GetByIdAsync(result.Value.Id);
+        var savedProduct = await productRepository.GetByIdAsync(productId);
         Assert.NotNull(savedProduct);
-        Assert.Equal(categoryResult.Value.Id, savedProduct.CategoryId);
+        Assert.Equal(productName, savedProduct.Name);
+        Assert.Equal(description, savedProduct.Description);
+        Assert.Equal(categoryId, savedProduct.CategoryId);
     }
 
     [Fact]
     public async Task CreateProduct_Failure_EmptyName()
     {
         // Arrange
-        var command = new CreateProduct("", faker.Commerce.ProductDescription(), null);
+        var command = new CreateProduct(Guid.NewGuid(), "", faker.Commerce.ProductDescription(), null);
 
         // Act
         var result = await mediator.Send(command);
@@ -83,6 +80,7 @@ public class CreateProductTests : IntegrationTestBase
         // Arrange
         var nonExistentCategoryId = Guid.NewGuid();
         var command = new CreateProduct(
+            Guid.NewGuid(),
             faker.Commerce.ProductName(),
             faker.Commerce.ProductDescription(),
             nonExistentCategoryId);

@@ -16,7 +16,7 @@ public class CategoryQueriesTests : IntegrationTestBase
         var categoryNames = new[] { "Electronics", "Clothing", "Books", "Home" };
         foreach (var name in categoryNames)
         {
-            await mediator.Send(new CreateCategory(name, null));
+            await mediator.Send(new CreateCategory(Guid.NewGuid(), name, null));
         }
 
         // Act
@@ -25,15 +25,16 @@ public class CategoryQueriesTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
+        var categories = await categoryRepository.GetAllAsync();
+        Assert.NotNull(categories);
 
         // Should have at least the categories we created
-        Assert.True(result.Value.Count() >= categoryNames.Length);
+        Assert.True(categories.Count() >= categoryNames.Length);
 
         // Verify all our categories exist in the result
         foreach (var name in categoryNames)
         {
-            Assert.Contains(result.Value, c => c.Name == name.ToLower());
+            Assert.Contains(categories, c => c.Name == name.ToLower());
         }
     }
 
@@ -41,30 +42,32 @@ public class CategoryQueriesTests : IntegrationTestBase
     public async Task GetCategoryById_ReturnsCategory_WhenExists()
     {
         // Arrange
-        var parentCategoryResult = await mediator.Send(new CreateCategory("Parent Category", null));
-        Assert.True(parentCategoryResult.IsSuccess);
+        var parentId = Guid.NewGuid();
+        var parentResult = await mediator.Send(new CreateCategory(parentId, "Parent Category", null));
+        Assert.True(parentResult.IsSuccess);
 
         var childNames = new[] { "Child One", "Child Two" };
         foreach (var name in childNames)
         {
-            await mediator.Send(new CreateCategory(name, parentCategoryResult.Value.Id));
+            await mediator.Send(new CreateCategory(Guid.NewGuid(), name, parentId));
         }
 
         // Act
-        var query = new GetCategoryById(parentCategoryResult.Value.Id);
+        var query = new GetCategoryById(parentId);
         var result = await mediator.Send(query);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(parentCategoryResult.Value.Id, result.Value.Id);
-        Assert.Equal("parent category", result.Value.Name);
+        var category = await categoryRepository.GetByIdAsync(parentId);
+        Assert.NotNull(category);
+        Assert.Equal(parentId, category.Id);
+        Assert.Equal("parent category", category.Name);
 
         // Verify subcategories
-        Assert.Equal(childNames.Length, result.Value.SubCategories.Count);
+        Assert.Equal(childNames.Length, category.SubCategories.Count);
         foreach (var name in childNames)
         {
-            Assert.Contains(result.Value.SubCategories, c => c.Name == name.ToLower());
+            Assert.Contains(category.SubCategories, c => c.Name == name.ToLower());
         }
     }
 
@@ -87,19 +90,21 @@ public class CategoryQueriesTests : IntegrationTestBase
     public async Task GetCategoryById_ReturnsEmptySubCategories_WhenNoChildren()
     {
         // Arrange
-        var categoryResult = await mediator.Send(new CreateCategory("Solo Category", null));
-        Assert.True(categoryResult.IsSuccess);
+        var categoryId = Guid.NewGuid();
+        var createResult = await mediator.Send(new CreateCategory(categoryId, "Solo Category", null));
+        Assert.True(createResult.IsSuccess);
 
         // Act
-        var query = new GetCategoryById(categoryResult.Value.Id);
+        var query = new GetCategoryById(categoryId);
         var result = await mediator.Send(query);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(categoryResult.Value.Id, result.Value.Id);
+        var category = await categoryRepository.GetByIdAsync(categoryId);
+        Assert.NotNull(category);
+        Assert.Equal(categoryId, category.Id);
 
         // Verify no subcategories
-        Assert.Empty(result.Value.SubCategories);
+        Assert.Empty(category.SubCategories);
     }
 }

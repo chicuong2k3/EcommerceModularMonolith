@@ -16,21 +16,23 @@ public sealed class Category : AggregateRoot
 
     public IReadOnlyCollection<Category> SubCategories => subCategories.AsReadOnly();
 
-    private Category(string name)
+    private Category(Guid id, string name)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         Name = name.ToLower();
     }
 
-    public static Result<Category> Create(string name)
+    public static Result<Category> Create(Guid id, string name)
     {
+        if (id == Guid.Empty)
+            return Result.Fail(new ValidationError("Id is required."));
         if (string.IsNullOrWhiteSpace(name))
             return Result.Fail(new ValidationError("Category name is required."));
 
         if (name.Length > 100)
             return Result.Fail(new ValidationError("Category name cannot exceed 100 characters."));
 
-        return Result.Ok(new Category(name));
+        return Result.Ok(new Category(id, name));
     }
 
     public Result ChangeName(string name)

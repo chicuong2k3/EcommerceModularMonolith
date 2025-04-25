@@ -43,14 +43,13 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
     {
-        var result = await mediator.Send(new CreateProduct(request.Name, request.Description, request.CategoryId));
+        var id = Guid.NewGuid();
+        var result = await mediator.Send(new CreateProduct(id, request.Name, request.Description, request.CategoryId));
         if (result.IsFailed)
             return result.ToActionResult();
 
-        var product = result.Value;
-        var getProductResult = await mediator.Send(new GetProductById(product.Id));
-
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, getProductResult.ValueOrDefault);
+        var getResult = await mediator.Send(new GetProductById(id));
+        return CreatedAtAction(nameof(GetProduct), new { id }, getResult.ValueOrDefault);
     }
 
     [HttpPost("{id}/variants")]

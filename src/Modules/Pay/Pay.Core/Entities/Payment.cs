@@ -22,11 +22,12 @@ public class Payment : AggregateRoot
     private Payment() { }
 
     public Payment(
+        Guid id,
         Guid orderId,
         Guid customerId,
         Money totalAmount)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         OrderId = orderId;
         CustomerId = customerId;
         TotalAmount = totalAmount;

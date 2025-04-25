@@ -15,9 +15,9 @@ public class Cart : AggregateRoot
     {
     }
 
-    public Cart(Guid ownerId)
+    public Cart(Guid id, Guid ownerId)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         OwnerId = ownerId;
         Items = new List<CartItem>();
     }

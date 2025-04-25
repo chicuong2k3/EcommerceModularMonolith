@@ -8,9 +8,9 @@ public class Review
 {
     private Review() { } // For EF Core
 
-    private Review(ReviewRating rating, string content, Guid userId, bool approved)
+    private Review(Guid id, ReviewRating rating, string content, Guid userId, bool approved)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         Rating = rating;
         Content = content;
         UserId = userId;
@@ -25,14 +25,16 @@ public class Review
     public bool Approved { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    public static Result<Review> Create(ReviewRating rating, string content, Guid userId)
+    public static Result<Review> Create(Guid id, ReviewRating rating, string content, Guid userId)
     {
+        if (id == Guid.Empty)
+            return Result.Fail(new ValidationError("Id is required."));
         if (string.IsNullOrWhiteSpace(content))
         {
             return Result.Fail(new ValidationError("Content cannot be empty."));
         }
 
-        return Result.Ok(new Review(rating, content, userId, false));
+        return Result.Ok(new Review(id, rating, content, userId, false));
     }
 
     public void Approve()

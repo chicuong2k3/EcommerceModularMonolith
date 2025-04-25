@@ -25,12 +25,13 @@ public class Order : AggregateRoot
     }
 
     private Order(
+        Guid id,
         Guid customerId,
         PaymentInfo paymentInfo,
         ShippingInfo shippingInfo,
         List<OrderItem> orderItems)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         CustomerId = customerId;
         PaymentInfo = paymentInfo;
         ShippingInfo = shippingInfo;
@@ -44,15 +45,18 @@ public class Order : AggregateRoot
     }
 
     public static Result<Order> Create(
+        Guid id,
         Guid customerId,
         PaymentInfo paymentInfo,
         ShippingInfo shippingInfo,
         List<OrderItem> orderItems)
     {
+        if (id == Guid.Empty)
+            return Result.Fail(new ValidationError("Id is required."));
         if (!orderItems.Any())
             return Result.Fail("Order must have at least one item");
 
-        var order = new Order(customerId, paymentInfo, shippingInfo, orderItems);
+        var order = new Order(id, customerId, paymentInfo, shippingInfo, orderItems);
         order.Total = order.Subtotal + order.ShippingInfo.ShippingCosts;
 
         return Result.Ok(order);

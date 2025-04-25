@@ -62,6 +62,9 @@ internal sealed class AddVariantForProductHandler(
 
             salePrice = salePriceCreationResult.Value;
             salePriceEffectivePeriod = datetimeRangeCreateResult.Value;
+
+            if (salePrice > priceCreateResult.Value)
+                return Result.Fail(new ValidationError("Sale price must be less than the original price"));
         }
 
         var variantCreationResult = ProductVariant.Create(

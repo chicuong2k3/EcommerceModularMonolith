@@ -26,7 +26,7 @@ internal sealed class AddItemToCartHandler(
 
         if (cart == null)
         {
-            cart = new Cart(command.OwnerId);
+            cart = new Cart(Guid.NewGuid(), command.OwnerId);
         }
 
         foreach (var item in command.Items)

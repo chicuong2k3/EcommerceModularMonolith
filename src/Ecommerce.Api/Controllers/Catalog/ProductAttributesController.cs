@@ -28,14 +28,12 @@ public class ProductAttributesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProductAttribute([FromBody] CreateProductAttributeRequest request)
     {
-        await mediator.Send(new CreateAttribute(request.Name));
-        var result = await mediator.Send(new GetAttributeByName(request.Name));
+        var result = await mediator.Send(new CreateAttribute(Guid.NewGuid(), request.Name));
         if (result.IsFailed)
             return result.ToActionResult();
 
-        var attribute = result.Value;
-
-        return CreatedAtAction(nameof(GetProductAttribute), new { name = attribute.Name }, attribute);
+        var getResult = await mediator.Send(new GetAttributeByName(request.Name));
+        return CreatedAtAction(nameof(GetProductAttribute), new { name = request.Name }, getResult.ValueOrDefault);
     }
 
     [HttpDelete("{name}")]

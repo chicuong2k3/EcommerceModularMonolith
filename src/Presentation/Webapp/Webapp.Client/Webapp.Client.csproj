@@ -44,7 +44,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\Modules\Catalog\Catalog.ApiContracts\Catalog.ApiContracts.csproj" />
+		<ProjectReference Include="..\..\..\Modules\Catalog\Catalog.ApiContracts\Catalog.ApiContracts.csproj" />
 	</ItemGroup>
 
 </Project>

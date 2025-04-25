@@ -28,13 +28,14 @@ public class CategoriesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
     {
-        var result = await mediator.Send(new CreateCategory(request.Name, request.ParentCategoryId));
+        var id = Guid.NewGuid();
+        var result = await mediator.Send(new CreateCategory(id, request.Name, request.ParentCategoryId));
 
         if (result.IsFailed)
             return result.ToActionResult();
 
-        var category = result.Value;
-        return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
+        var getResult = await mediator.Send(new GetCategoryById(id));
+        return CreatedAtAction(nameof(GetCategory), new { id }, getResult.ValueOrDefault);
     }
 
     [HttpPut("{id}")]

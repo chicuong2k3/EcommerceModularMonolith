@@ -13,12 +13,12 @@ public class UpdateCategoryTests : IntegrationTestBase
     public async Task UpdateCategory_Success_ChangeName()
     {
         // Arrange
+        var categoryId = Guid.NewGuid();
         var initialName = faker.Commerce.Categories(1)[0];
-        var createResult = await mediator.Send(new CreateCategory(initialName, null));
-        Assert.True(createResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, initialName, null));
 
         var newName = faker.Commerce.Categories(1)[0];
-        var command = new UpdateCategory(createResult.Value.Id, newName, null);
+        var command = new UpdateCategory(categoryId, newName, null);
 
         // Act
         var result = await mediator.Send(command);
@@ -27,7 +27,7 @@ public class UpdateCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify name changed
-        var updatedCategory = await categoryRepository.GetByIdAsync(createResult.Value.Id);
+        var updatedCategory = await categoryRepository.GetByIdAsync(categoryId);
         Assert.NotNull(updatedCategory);
         Assert.Equal(newName.ToLower(), updatedCategory.Name);
     }
@@ -36,20 +36,19 @@ public class UpdateCategoryTests : IntegrationTestBase
     public async Task UpdateCategory_Success_ChangeParent()
     {
         // Arrange
+        var categoryId = Guid.NewGuid();
+        var parentId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
         var parentCategoryName = faker.Commerce.Categories(1)[0];
 
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        var parentCategoryResult = await mediator.Send(new CreateCategory(parentCategoryName, null));
-
-        Assert.True(categoryResult.IsSuccess);
-        Assert.True(parentCategoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
+        await mediator.Send(new CreateCategory(parentId, parentCategoryName, null));
 
         // Update category to have a parent
         var command = new UpdateCategory(
-            categoryResult.Value.Id,
+            categoryId,
             categoryName,
-            parentCategoryResult.Value.Id);
+            parentId);
 
         // Act
         var result = await mediator.Send(command);
@@ -58,30 +57,29 @@ public class UpdateCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify parent changed
-        var updatedParent = await categoryRepository.GetByIdAsync(parentCategoryResult.Value.Id);
+        var updatedParent = await categoryRepository.GetByIdAsync(parentId);
         Assert.NotNull(updatedParent);
-        Assert.Contains(updatedParent.SubCategories, c => c.Id == categoryResult.Value.Id);
+        Assert.Contains(updatedParent.SubCategories, c => c.Id == categoryId);
     }
 
     [Fact]
     public async Task UpdateCategory_Success_ChangeNameAndParent()
     {
         // Arrange - create two categories
+        var categoryId = Guid.NewGuid();
+        var parentId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
         var parentCategoryName = faker.Commerce.Categories(1)[0];
 
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        var parentCategoryResult = await mediator.Send(new CreateCategory(parentCategoryName, null));
-
-        Assert.True(categoryResult.IsSuccess);
-        Assert.True(parentCategoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
+        await mediator.Send(new CreateCategory(parentId, parentCategoryName, null));
 
         // Update category name and parent
         var newName = faker.Commerce.Categories(1)[0];
         var command = new UpdateCategory(
-            categoryResult.Value.Id,
+            categoryId,
             newName,
-            parentCategoryResult.Value.Id);
+            parentId);
 
         // Act
         var result = await mediator.Send(command);
@@ -90,10 +88,10 @@ public class UpdateCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify name and parent changed
-        var updatedParent = await categoryRepository.GetByIdAsync(parentCategoryResult.Value.Id);
+        var updatedParent = await categoryRepository.GetByIdAsync(parentId);
         Assert.NotNull(updatedParent);
 
-        var updatedCategory = updatedParent.SubCategories.FirstOrDefault(c => c.Id == categoryResult.Value.Id);
+        var updatedCategory = updatedParent.SubCategories.FirstOrDefault(c => c.Id == categoryId);
         Assert.NotNull(updatedCategory);
         Assert.Equal(newName.ToLower(), updatedCategory.Name);
     }
@@ -117,14 +115,14 @@ public class UpdateCategoryTests : IntegrationTestBase
     public async Task UpdateCategory_Failure_ParentCategoryNotFound()
     {
         // Arrange
+        var categoryId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        Assert.True(categoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
 
         // Try to update with non-existent parent
         var nonExistentParentId = Guid.NewGuid();
         var command = new UpdateCategory(
-            categoryResult.Value.Id,
+            categoryId,
             categoryName,
             nonExistentParentId);
 
@@ -140,13 +138,13 @@ public class UpdateCategoryTests : IntegrationTestBase
     public async Task UpdateCategory_Failure_EmptyName()
     {
         // Arrange
+        var categoryId = Guid.NewGuid();
         var categoryName = faker.Commerce.Categories(1)[0];
-        var categoryResult = await mediator.Send(new CreateCategory(categoryName, null));
-        Assert.True(categoryResult.IsSuccess);
+        await mediator.Send(new CreateCategory(categoryId, categoryName, null));
 
         // Try to update with empty name
         var command = new UpdateCategory(
-            categoryResult.Value.Id,
+            categoryId,
             "",
             null);
 

@@ -40,7 +40,7 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
         try
         {
             var createPaymentResult = await mediator.Send(
-                new CreatePayment(integrationEvent.OrderId, integrationEvent.CustomerId, integrationEvent.TotalAmount),
+                new CreatePayment(Guid.NewGuid(), integrationEvent.OrderId, integrationEvent.CustomerId, integrationEvent.TotalAmount),
                 cancellationToken);
 
             if (createPaymentResult.IsFailed)

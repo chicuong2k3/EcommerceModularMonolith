@@ -1,3 +1,7 @@
+using Catalog.Core.Commands;
+using Catalog.Core.Repositories;
+using Shared.Abstractions.Core;
+
 namespace Catalog.IntegrationTests.Products;
 
 public class DeleteVariantTests : IntegrationTestBase
@@ -13,16 +17,16 @@ public class DeleteVariantTests : IntegrationTestBase
     public async Task DeleteVariant_Success()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
-        // Add a variant
+        // Add variant
         var price = faker.Random.Decimal(10, 100);
         var quantity = faker.Random.Int(1, 100);
-
-        var addVariantCommand = new AddVariantForProduct(
-            createProductResult.Value.Id,
+        var addVariantResult = await mediator.Send(new AddVariantForProduct(
+            productId,
             price,
             quantity,
             null,
@@ -30,20 +34,14 @@ public class DeleteVariantTests : IntegrationTestBase
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
-
-        var addVariantResult = await mediator.Send(addVariantCommand);
+            null));
         Assert.True(addVariantResult.IsSuccess);
 
-        // Get the product with variant
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
-        Assert.NotNull(product);
-        Assert.Single(product.Variants);
+        // Get the variant ID
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         var variantId = product.Variants.First().Id;
 
-        // Delete the variant
-        var command = new DeleteVariant(product.Id, variantId);
+        var command = new DeleteVariant(productId, variantId);
 
         // Act
         var result = await mediator.Send(command);
@@ -52,7 +50,7 @@ public class DeleteVariantTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify variant was deleted
-        var updatedProduct = await productRepository.GetByIdWithVariantsAsync(product.Id);
+        var updatedProduct = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(updatedProduct);
         Assert.Empty(updatedProduct.Variants);
     }
@@ -61,9 +59,7 @@ public class DeleteVariantTests : IntegrationTestBase
     public async Task DeleteVariant_Failure_ProductNotFound()
     {
         // Arrange
-        var nonExistentProductId = Guid.NewGuid();
-        var variantId = Guid.NewGuid();
-        var command = new DeleteVariant(nonExistentProductId, variantId);
+        var command = new DeleteVariant(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
         var result = await mediator.Send(command);
@@ -77,13 +73,12 @@ public class DeleteVariantTests : IntegrationTestBase
     public async Task DeleteVariant_Failure_VariantNotFound()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
-        // Use a non-existent variant ID
-        var nonExistentVariantId = Guid.NewGuid();
-        var command = new DeleteVariant(createProductResult.Value.Id, nonExistentVariantId);
+        var command = new DeleteVariant(productId, Guid.NewGuid());
 
         // Act
         var result = await mediator.Send(command);
@@ -94,19 +89,19 @@ public class DeleteVariantTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task DeleteVariant_LastVariant_ReturnsSuccess()
+    public async Task DeleteVariant_Success_LastVariant()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
-        // Add a variant
+        // Add variant
         var price = faker.Random.Decimal(10, 100);
         var quantity = faker.Random.Int(1, 100);
-
-        var addVariantCommand = new AddVariantForProduct(
-            createProductResult.Value.Id,
+        var addVariantResult = await mediator.Send(new AddVariantForProduct(
+            productId,
             price,
             quantity,
             null,
@@ -114,18 +109,14 @@ public class DeleteVariantTests : IntegrationTestBase
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
-
-        var addVariantResult = await mediator.Send(addVariantCommand);
+            null));
         Assert.True(addVariantResult.IsSuccess);
 
-        // Get the product with variant
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
+        // Get the variant ID
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         var variantId = product.Variants.First().Id;
 
-        // Delete the variant
-        var command = new DeleteVariant(product.Id, variantId);
+        var command = new DeleteVariant(productId, variantId);
 
         // Act
         var result = await mediator.Send(command);
@@ -133,9 +124,63 @@ public class DeleteVariantTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify product still exists but has no variants
-        var updatedProduct = await productRepository.GetByIdWithVariantsAsync(product.Id);
+        // Verify product exists but has no variants
+        var updatedProduct = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(updatedProduct);
         Assert.Empty(updatedProduct.Variants);
+    }
+
+    [Fact]
+    public async Task DeleteVariant_Success_MultipleVariants()
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        var productName = faker.Commerce.ProductName();
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
+
+        // Add first variant
+        var addFirstVariantResult = await mediator.Send(new AddVariantForProduct(
+            productId,
+            faker.Random.Decimal(10, 100),
+            faker.Random.Int(1, 100),
+            null,
+            null,
+            Array.Empty<AttributeValue>(),
+            null,
+            null,
+            null));
+        Assert.True(addFirstVariantResult.IsSuccess);
+
+        // Add second variant
+        var addSecondVariantResult = await mediator.Send(new AddVariantForProduct(
+            productId,
+            faker.Random.Decimal(10, 100),
+            faker.Random.Int(1, 100),
+            null,
+            null,
+            Array.Empty<AttributeValue>(),
+            null,
+            null,
+            null));
+        Assert.True(addSecondVariantResult.IsSuccess);
+
+        // Get the first variant ID
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
+        var firstVariantId = product.Variants.First().Id;
+
+        var command = new DeleteVariant(productId, firstVariantId);
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        // Verify one variant remains
+        var updatedProduct = await productRepository.GetByIdWithVariantsAsync(productId);
+        Assert.NotNull(updatedProduct);
+        Assert.Single(updatedProduct.Variants);
+        Assert.DoesNotContain(updatedProduct.Variants, v => v.Id == firstVariantId);
     }
 }

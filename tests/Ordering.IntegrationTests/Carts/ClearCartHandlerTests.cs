@@ -1,36 +1,50 @@
+using Ordering.Core.Persistence;
+using Shared.Abstractions.Core;
+
 namespace Ordering.IntegrationTests.Carts;
 
 public class ClearCartHandlerTests : IntegrationTestBase
 {
     private readonly ICartRepository cartRepository;
+    private readonly OrderingDbContext dbContext;
 
     public ClearCartHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
         cartRepository = serviceScope.ServiceProvider.GetRequiredService<ICartRepository>();
+        dbContext = serviceScope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+
+        // Clear any existing carts to prevent conflicts
+        ClearDatabase().GetAwaiter().GetResult();
+    }
+
+    private async Task ClearDatabase()
+    {
+        // Remove any existing carts
+        var existingCarts = await dbContext.Set<Cart>().ToListAsync();
+        if (existingCarts.Any())
+        {
+            dbContext.Set<Cart>().RemoveRange(existingCarts);
+            await dbContext.SaveChangesAsync();
+        }
     }
 
     [Fact]
-    public async Task Handle_ShouldClearAllItems_FromExistingCart()
+    public async Task Handle_Success_ClearsExistingCart()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
-
-        // Create product identifiers
-        var product1Id = Guid.NewGuid();
-        var variant1Id = Guid.NewGuid();
-        var product2Id = Guid.NewGuid();
-        var variant2Id = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var variantId = Guid.NewGuid();
 
         // Create cart with items
-        var cart = new Cart(ownerId);
-        await cart.AddItemAsync(product1Id, variant1Id, 2);
-        await cart.AddItemAsync(product2Id, variant2Id, 3);
+        var cart = new Cart(Guid.NewGuid(), ownerId);
+        await cart.AddItemAsync(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         // Verify cart has items initially
         var initialCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(initialCart);
-        Assert.Equal(2, initialCart.Items.Count);
+        Assert.Single(initialCart.Items);
 
         // Create command
         var command = new ClearCart(ownerId);
@@ -40,21 +54,19 @@ public class ClearCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsSuccess);
-
-        // Verify cart is empty
         var clearedCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(clearedCart);
         Assert.Empty(clearedCart.Items);
     }
 
     [Fact]
-    public async Task Handle_ShouldSucceed_WhenCartIsAlreadyEmpty()
+    public async Task Handle_Success_ClearsEmptyCart()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
 
         // Create empty cart
-        var cart = new Cart(ownerId);
+        var cart = new Cart(Guid.NewGuid(), ownerId);
         await cartRepository.UpsertAsync(cart);
 
         // Verify cart is empty initially
@@ -70,15 +82,13 @@ public class ClearCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsSuccess);
-
-        // Verify cart remains empty
         var clearedCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(clearedCart);
         Assert.Empty(clearedCart.Items);
     }
 
     [Fact]
-    public async Task Handle_ShouldCreateEmptyCart_WhenCartDoesNotExist()
+    public async Task Handle_Success_CreatesEmptyCart_WhenCartDoesNotExist()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
@@ -95,28 +105,21 @@ public class ClearCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsSuccess);
-
-        // Verify empty cart was created
         var newCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(newCart);
         Assert.Empty(newCart.Items);
     }
 
     [Fact]
-    public async Task Handle_ShouldPreserveCartId_WhenClearingExistingCart()
+    public async Task Handle_Success_PreservesCartId_WhenClearingExistingCart()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
+        var cartId = Guid.NewGuid();
 
-        // Create cart with an item
-        var cart = new Cart(ownerId);
-        var productId = Guid.NewGuid();
-        var variantId = Guid.NewGuid();
-
-        await cart.AddItemAsync(productId, variantId, 1);
+        // Create cart with known ID
+        var cart = new Cart(cartId, ownerId);
         await cartRepository.UpsertAsync(cart);
-
-        var originalCartId = cart.Id;
 
         // Create command
         var command = new ClearCart(ownerId);
@@ -126,10 +129,9 @@ public class ClearCartHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsSuccess);
-
-        // Verify cart ID was preserved
         var clearedCart = await cartRepository.GetAsync(ownerId);
         Assert.NotNull(clearedCart);
-        Assert.Equal(originalCartId, clearedCart.Id);
+        Assert.Equal(cartId, clearedCart.Id);
+        Assert.Empty(clearedCart.Items);
     }
 }

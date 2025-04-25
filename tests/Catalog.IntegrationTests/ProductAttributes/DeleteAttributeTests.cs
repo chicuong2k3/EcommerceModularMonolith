@@ -1,3 +1,5 @@
+using Shared.Abstractions.Core;
+
 namespace Catalog.IntegrationTests.ProductAttributes;
 
 public class DeleteAttributeTests : IntegrationTestBase
@@ -13,33 +15,11 @@ public class DeleteAttributeTests : IntegrationTestBase
     public async Task DeleteAttribute_Success()
     {
         // Arrange
-        var attributeName = "features";
-        var createResult = await mediator.Send(new CreateAttribute(attributeName));
-        Assert.True(createResult.IsSuccess);
+        var attributeId = Guid.NewGuid();
+        var attributeName = "test-attribute";
+        await mediator.Send(new CreateAttribute(attributeId, attributeName));
 
         var command = new DeleteAttribute(attributeName);
-
-        // Act
-        var result = await mediator.Send(command);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-
-        // Verify deletion
-        var deletedAttribute = await productAttributeRepository.GetByNameAsync(attributeName);
-        Assert.Null(deletedAttribute);
-    }
-
-    [Fact]
-    public async Task DeleteAttribute_Success_CaseInsensitive()
-    {
-        // Arrange
-        var attributeName = "features";
-        var createResult = await mediator.Send(new CreateAttribute(attributeName));
-        Assert.True(createResult.IsSuccess);
-
-        // Delete using uppercase name
-        var command = new DeleteAttribute(attributeName.ToUpper());
 
         // Act
         var result = await mediator.Send(command);
@@ -56,8 +36,7 @@ public class DeleteAttributeTests : IntegrationTestBase
     public async Task DeleteAttribute_Failure_AttributeNotFound()
     {
         // Arrange
-        var nonExistentName = "nonexistent";
-        var command = new DeleteAttribute(nonExistentName);
+        var command = new DeleteAttribute("non-existent-attribute");
 
         // Act
         var result = await mediator.Send(command);

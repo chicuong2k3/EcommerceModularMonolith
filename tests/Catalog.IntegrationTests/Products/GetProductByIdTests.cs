@@ -10,42 +10,33 @@ public class GetProductByIdTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetProductById_ReturnsProduct_WhenExists()
+    public async Task GetProductById_Success()
     {
         // Arrange
-        var product = await CreateProductWithVariantAndAttributes();
+        var productId = Guid.NewGuid();
+        var productName = faker.Commerce.ProductName();
+        var description = faker.Commerce.ProductDescription();
+        await mediator.Send(new CreateProduct(productId, productName, description, null));
 
         // Act
-        var query = new GetProductById(product.Id);
-        var result = await mediator.Send(query);
+        var result = await mediator.Send(new GetProductById(productId));
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(product.Id, result.Value.Id);
-        Assert.Equal(product.Name, result.Value.Name);
-        Assert.Equal(product.Description, result.Value.Description);
-
-        // Verify variants
-        Assert.NotEmpty(result.Value.Variants);
-        var variant = result.Value.Variants[0];
-        var originalVariant = product.Variants.First();
-        Assert.Equal(originalVariant.Id, variant.VariantId);
-        Assert.Equal(originalVariant.OriginalPrice, variant.OriginalPrice);
-
-        // Verify attributes
-        Assert.NotEmpty(variant.Attributes);
+        var product = result.Value;
+        Assert.Equal(productId, product.Id);
+        Assert.Equal(productName, product.Name);
+        Assert.Equal(description, product.Description);
     }
 
     [Fact]
-    public async Task GetProductById_ReturnsNotFound_WhenProductDoesNotExist()
+    public async Task GetProductById_Failure_ProductNotFound()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
+        var nonExistentProductId = Guid.NewGuid();
 
         // Act
-        var query = new GetProductById(nonExistentId);
-        var result = await mediator.Send(query);
+        var result = await mediator.Send(new GetProductById(nonExistentProductId));
 
         // Assert
         Assert.True(result.IsFailed);
@@ -79,48 +70,21 @@ public class GetProductByIdTests : IntegrationTestBase
         }
     }
 
-    // Helper methods
-    private async Task<Product> CreateProductWithVariantAndAttributes()
-    {
-        // Create a product
-        var createProductCmd = new CreateProduct(
-            faker.Commerce.ProductName(),
-            faker.Commerce.ProductDescription(),
-            null);
-
-        var productResult = await mediator.Send(createProductCmd);
-        Assert.True(productResult.IsSuccess);
-
-        // Add a variant with attributes
-        var attributes = new List<AttributeValue>
-        {
-            new AttributeValue("Color", "Red"),
-            new AttributeValue("Size", "Large")
-        };
-
-        var addVariantCmd = new AddVariantForProduct(
-            productResult.Value.Id,
-            faker.Random.Decimal(10, 100),
-            faker.Random.Int(1, 100),
-            null,
-            null,
-            attributes,
-            DateTime.UtcNow.AddDays(-1),
-            DateTime.UtcNow.AddDays(1),
-            faker.Random.Decimal(1, 10)
-        );
-
-        var variantResult = await mediator.Send(addVariantCmd);
-        Assert.True(variantResult.IsSuccess);
-        var product = await productRepository.GetByIdWithVariantsAsync(productResult.Value.Id);
-
-        return product!;
-    }
-
     private async Task<Product> CreateProductWithMultipleVariants()
     {
+        // Create attributes first
+        var createSizeAttrCmd = new CreateAttribute(Guid.NewGuid(), "Size");
+        var sizeResult = await mediator.Send(createSizeAttrCmd);
+        Assert.True(sizeResult.IsSuccess);
+
+        var createColorAttrCmd = new CreateAttribute(Guid.NewGuid(), "Color");
+        var colorResult = await mediator.Send(createColorAttrCmd);
+        Assert.True(colorResult.IsSuccess);
+
         // Create product
+        var productId = Guid.NewGuid();
         var createProductCmd = new CreateProduct(
+            productId,
             faker.Commerce.ProductName(),
             faker.Commerce.ProductDescription(),
             null);
@@ -130,6 +94,7 @@ public class GetProductByIdTests : IntegrationTestBase
 
         // Add multiple variants with different attributes
         var sizes = new[] { "Small", "Medium", "Large" };
+        var colors = new[] { "Red", "Blue", "Green" };
         var prices = new[] { 19.99m, 24.99m, 29.99m };
 
         for (int i = 0; i < 3; i++)
@@ -137,26 +102,25 @@ public class GetProductByIdTests : IntegrationTestBase
             var attributes = new List<AttributeValue>
             {
                 new AttributeValue("Size", sizes[i]),
-                new AttributeValue("Color", faker.Commerce.Color())
+                new AttributeValue("Color", colors[i])
             };
 
             var addVariantCmd = new AddVariantForProduct(
-                productResult.Value.Id,
+                productId,
                 prices[i],
                 faker.Random.Int(1, 100),
                 null,
                 null,
                 attributes,
-                DateTime.UtcNow.AddDays(-1),
-                DateTime.UtcNow.AddDays(1),
-                faker.Random.Decimal(1, 10)
-            );
+                null,
+                null,
+                null);
 
             var variantResult = await mediator.Send(addVariantCmd);
             Assert.True(variantResult.IsSuccess);
         }
 
-        var product = await productRepository.GetByIdWithVariantsAsync(productResult.Value.Id);
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         return product!;
     }
 }

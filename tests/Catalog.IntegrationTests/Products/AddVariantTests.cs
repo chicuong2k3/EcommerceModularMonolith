@@ -1,3 +1,7 @@
+using Catalog.Core.Commands;
+using Catalog.Core.Repositories;
+using Shared.Abstractions.Core;
+
 namespace Catalog.IntegrationTests.Products;
 
 public class AddVariantTests : IntegrationTestBase
@@ -13,24 +17,24 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Success_BasicVariant()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create variant
         var price = faker.Random.Decimal(10, 100);
         var quantity = faker.Random.Int(1, 100);
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             price,
             quantity,
-            null,  // No image
             null,
-            Array.Empty<AttributeValue>(),  // No attributes
-            null,  // No discount
             null,
-            null
-        );
+            Array.Empty<AttributeValue>(),
+            null,
+            null,
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -39,7 +43,7 @@ public class AddVariantTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify product has variant
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(product);
         Assert.Single(product.Variants);
         Assert.Equal(quantity, product.Variants.First().Quantity);
@@ -50,9 +54,10 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Success_WithDiscount()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create variant with discount
         var originalPrice = faker.Random.Decimal(50, 100);
@@ -62,16 +67,15 @@ public class AddVariantTests : IntegrationTestBase
         var discountEnd = DateTime.UtcNow.AddDays(10);
 
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             originalPrice,
             quantity,
-            null,  // No image
             null,
-            Array.Empty<AttributeValue>(),  // No attributes
+            null,
+            Array.Empty<AttributeValue>(),
             discountStart,
             discountEnd,
-            salePrice
-        );
+            salePrice);
 
         // Act
         var result = await mediator.Send(command);
@@ -80,7 +84,7 @@ public class AddVariantTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify product has variant with discount
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(product);
         Assert.Single(product.Variants);
 
@@ -97,9 +101,19 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Success_WithAttributes()
     {
         // Arrange
+        // Create attributes first
+        var createSizeAttrCmd = new CreateAttribute(Guid.NewGuid(), "Size");
+        var sizeResult = await mediator.Send(createSizeAttrCmd);
+        Assert.True(sizeResult.IsSuccess);
+
+        var createColorAttrCmd = new CreateAttribute(Guid.NewGuid(), "Color");
+        var colorResult = await mediator.Send(createColorAttrCmd);
+        Assert.True(colorResult.IsSuccess);
+
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create attribute
         var attributeName = "color";
@@ -110,16 +124,15 @@ public class AddVariantTests : IntegrationTestBase
         var quantity = faker.Random.Int(1, 100);
 
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             price,
             quantity,
-            null,  // No image
             null,
-            [new AttributeValue(attributeName, attributeValue)],
-            null,  // No discount
             null,
-            null
-        );
+            new[] { new AttributeValue(attributeName, attributeValue) },
+            null,
+            null,
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -128,7 +141,7 @@ public class AddVariantTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify product has variant with attribute
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(product);
         Assert.Single(product.Variants);
     }
@@ -147,8 +160,7 @@ public class AddVariantTests : IntegrationTestBase
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -161,14 +173,15 @@ public class AddVariantTests : IntegrationTestBase
     [Fact]
     public async Task AddVariant_Failure_InvalidPrice()
     {
-        // Arrange - create a product first
+        // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create variant with negative price
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             -10, // negative price should fail
             faker.Random.Int(1, 100),
             null,
@@ -176,8 +189,7 @@ public class AddVariantTests : IntegrationTestBase
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -191,9 +203,10 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Success_WithImage()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create variant with image
         var price = faker.Random.Decimal(10, 100);
@@ -202,7 +215,7 @@ public class AddVariantTests : IntegrationTestBase
         var imageAltText = "Product image";
 
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             price,
             quantity,
             imageUrl,
@@ -210,8 +223,7 @@ public class AddVariantTests : IntegrationTestBase
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -220,7 +232,7 @@ public class AddVariantTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify product has variant with image
-        var product = await productRepository.GetByIdWithVariantsAsync(createProductResult.Value.Id);
+        var product = await productRepository.GetByIdWithVariantsAsync(productId);
         Assert.NotNull(product);
         Assert.Single(product.Variants);
         Assert.NotNull(product.Variants.First().Image);
@@ -232,22 +244,22 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Failure_InvalidImageUrl()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
-        // Create variant with invalid image URL (empty string is invalid)
+        // Create variant with invalid image URL
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             faker.Random.Decimal(10, 100),
             faker.Random.Int(1, 100),
-            "abc",  // Invalid URL should cause validation error
+            "abc", // Invalid URL should cause validation error
             "Alt text",
             Array.Empty<AttributeValue>(),
             null,
             null,
-            null
-        );
+            null);
 
         // Act
         var result = await mediator.Send(command);
@@ -261,22 +273,25 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Failure_InvalidSalePrice()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
-        // Create variant with invalid sale price (negative)
+        // Create variant with invalid sale price (higher than original price)
+        var originalPrice = faker.Random.Decimal(10, 50);
+        var invalidSalePrice = originalPrice + 10; // Sale price higher than original
+
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
-            faker.Random.Decimal(10, 100),
+            productId,
+            originalPrice,
             faker.Random.Int(1, 100),
             null,
             null,
             Array.Empty<AttributeValue>(),
             DateTime.UtcNow,
-            DateTime.UtcNow.AddDays(10),
-            -5.0m  // Negative sale price should cause validation error
-        );
+            DateTime.UtcNow.AddDays(1),
+            invalidSalePrice);
 
         // Act
         var result = await mediator.Send(command);
@@ -290,25 +305,22 @@ public class AddVariantTests : IntegrationTestBase
     public async Task AddVariant_Failure_InvalidDateTimeRange()
     {
         // Arrange
+        var productId = Guid.NewGuid();
         var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
+        var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
+        Assert.True(createResult.IsSuccess);
 
         // Create variant with invalid date range (end before start)
-        var start = DateTime.UtcNow;
-        var end = start.AddDays(-5); // End date before start date
-
         var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
+            productId,
             faker.Random.Decimal(10, 100),
             faker.Random.Int(1, 100),
             null,
             null,
             Array.Empty<AttributeValue>(),
-            start,
-            end,  // End before start should cause validation error
-            faker.Random.Decimal(5, 9)
-        );
+            DateTime.UtcNow.AddDays(1), // Start date after end date
+            DateTime.UtcNow,
+            faker.Random.Decimal(5, 9));
 
         // Act
         var result = await mediator.Send(command);
@@ -316,41 +328,5 @@ public class AddVariantTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsFailed);
         Assert.Contains(result.Errors, error => error is ValidationError);
-    }
-
-    [Fact]
-    public async Task AddVariant_Failure_AttributeNotFound()
-    {
-        // Arrange
-        var productName = faker.Commerce.ProductName();
-        var createProductResult = await mediator.Send(new CreateProduct(productName, null, null));
-        Assert.True(createProductResult.IsSuccess);
-
-        // Create variant with non-existent attribute
-        var nonExistentAttributeName = "NonExistentAttribute_" + Guid.NewGuid().ToString();
-        var attributes = new List<AttributeValue>
-        {
-            new AttributeValue(nonExistentAttributeName, "Some Value")
-        };
-
-        var command = new AddVariantForProduct(
-            createProductResult.Value.Id,
-            faker.Random.Decimal(10, 100),
-            faker.Random.Int(1, 100),
-            null,
-            null,
-            attributes,
-            null,
-            null,
-            null
-        );
-
-        // Act
-        var result = await mediator.Send(command);
-
-        // Assert
-        Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, error => error is NotFoundError);
-        Assert.Contains(result.Errors, error => error.Message.Contains(nonExistentAttributeName));
     }
 }

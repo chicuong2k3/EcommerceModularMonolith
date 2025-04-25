@@ -1,5 +1,6 @@
 using Catalog.Contracts;
 using FluentResults;
+using MediatR;
 using Ordering.Core.Entities;
 using Ordering.Core.Repositories;
 using Ordering.Core.ValueObjects;
@@ -9,6 +10,7 @@ using Shared.Abstractions.Core;
 namespace Ordering.Core.Commands;
 
 public record PlaceOrder(
+    Guid Id,
     Guid CustomerId,
     string? Street,
     string Ward,
@@ -17,15 +19,16 @@ public record PlaceOrder(
     string Country,
     string PhoneNumber,
     string PaymentMethod,
-    string ShippingMethod) : ICommand<Guid>;
+    string ShippingMethod) : ICommand;
 
 internal sealed class PlaceOrderHandler(
     IOrderRepository orderRepository,
     ICartRepository cartRepository,
-    IProductService productService)
-    : ICommandHandler<PlaceOrder, Guid>
+    IProductService productService,
+    IMediator mediator)
+    : ICommandHandler<PlaceOrder>
 {
-    public async Task<Result<Guid>> Handle(PlaceOrder command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(PlaceOrder command, CancellationToken cancellationToken)
     {
         // Get cart and validate items
         var cart = await cartRepository.GetAsync(command.CustomerId, cancellationToken);
@@ -87,7 +90,7 @@ internal sealed class PlaceOrderHandler(
 
         // Create shipping info
         if (!Enum.TryParse<ShippingMethod>(command.ShippingMethod, out var shippingMethod))
-            return Result.Fail($"Invalid shipping method: {command.ShippingMethod}");
+            return Result.Fail(new ValidationError($"Invalid shipping method: {command.ShippingMethod}"));
 
         var shippingInfoCreationResult = ShippingInfo.Create(locationCreationResult.Value, command.PhoneNumber, shippingMethod);
         if (shippingInfoCreationResult.IsFailed)
@@ -100,6 +103,7 @@ internal sealed class PlaceOrderHandler(
 
 
         var orderCreationResult = Order.Create(
+            command.Id,
             command.CustomerId,
             paymentInfoCreationResult.Value,
             shippingInfoCreationResult.Value,
@@ -114,7 +118,8 @@ internal sealed class PlaceOrderHandler(
         order.RaisePaymentEvent();
 
         await orderRepository.AddAsync(order, cancellationToken);
+        await mediator.Send(new ClearCart(command.CustomerId));
 
-        return Result.Ok(order.Id);
+        return Result.Ok();
     }
 }

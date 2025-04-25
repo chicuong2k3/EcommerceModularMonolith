@@ -1,4 +1,5 @@
 using Ordering.Core.Persistence;
+using Shared.Abstractions.Core;
 
 namespace Ordering.IntegrationTests.Orders;
 
@@ -56,7 +57,6 @@ public class CancelOrderHandlerTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify order status changed
         var canceledOrder = await orderRepository.GetByIdAsync(order.Id);
         Assert.NotNull(canceledOrder);
         Assert.Equal(OrderStatus.Canceled, canceledOrder.Status);
@@ -75,14 +75,13 @@ public class CancelOrderHandlerTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify order status changed
         var canceledOrder = await orderRepository.GetByIdAsync(order.Id);
         Assert.NotNull(canceledOrder);
         Assert.Equal(OrderStatus.Canceled, canceledOrder.Status);
     }
 
     [Fact]
-    public async Task Handle_ReturnsFail_ForNonExistentOrder()
+    public async Task Handle_Failure_NonExistentOrder()
     {
         // Arrange
         var nonExistentOrderId = Guid.NewGuid();
@@ -93,11 +92,11 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is NotFoundError);
+        Assert.Contains(result.Errors, error => error is NotFoundError);
     }
 
     [Fact]
-    public async Task Handle_ReturnsFail_ForAlreadyShippedOrder()
+    public async Task Handle_Failure_AlreadyShippedOrder()
     {
         // Arrange
         var order = await CreateOrderAsync(OrderStatus.Shipped);
@@ -108,11 +107,16 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is Error);
+        Assert.Contains(result.Errors, error => error is Error);
+
+        // Verify order status did not change
+        var unchangedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.NotNull(unchangedOrder);
+        Assert.Equal(OrderStatus.Shipped, unchangedOrder.Status);
     }
 
     [Fact]
-    public async Task Handle_ReturnsFail_ForDeliveredOrder()
+    public async Task Handle_Failure_DeliveredOrder()
     {
         // Arrange
         var order = await CreateOrderAsync(OrderStatus.Delivered);
@@ -123,11 +127,16 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is Error);
+        Assert.Contains(result.Errors, error => error is Error);
+
+        // Verify order status did not change
+        var unchangedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.NotNull(unchangedOrder);
+        Assert.Equal(OrderStatus.Delivered, unchangedOrder.Status);
     }
 
     [Fact]
-    public async Task Handle_ReturnsFail_ForAlreadyCancelledOrder()
+    public async Task Handle_Failure_AlreadyCancelledOrder()
     {
         // Arrange
         var order = await CreateOrderAsync(OrderStatus.Canceled);
@@ -138,11 +147,16 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is Error);
+        Assert.Contains(result.Errors, error => error is Error);
+
+        // Verify order status did not change
+        var unchangedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.NotNull(unchangedOrder);
+        Assert.Equal(OrderStatus.Canceled, unchangedOrder.Status);
     }
 
     [Fact]
-    public async Task Handle_ReturnsFail_ForRefundedOrder()
+    public async Task Handle_Failure_RefundedOrder()
     {
         // Arrange
         var order = await CreateOrderAsync(OrderStatus.Refunded);
@@ -153,7 +167,12 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, e => e is Error);
+        Assert.Contains(result.Errors, error => error is Error);
+
+        // Verify order status did not change
+        var unchangedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.NotNull(unchangedOrder);
+        Assert.Equal(OrderStatus.Refunded, unchangedOrder.Status);
     }
 
     private async Task<Order> CreateOrderAsync(OrderStatus status)
@@ -212,21 +231,15 @@ public class CancelOrderHandlerTests : IntegrationTestBase
 
         // Create the order
         var orderResult = Order.Create(
+            Guid.NewGuid(),
             customerId,
             paymentInfo,
             shippingInfo,
             new List<OrderItem> { orderItem });
 
         var order = orderResult.Value;
-
-        // Set the status according to the parameter
-        // Note: This is for testing purposes, normally status changes would follow business logic
-        var setStatusField = typeof(Order).GetProperty("Status");
-        setStatusField?.SetValue(order, status);
-
-        // Save to repository
+        order.Status = status; // Set the desired status
         await orderRepository.AddAsync(order);
-
         return order;
     }
 }

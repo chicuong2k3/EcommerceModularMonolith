@@ -6,11 +6,11 @@ using Shared.Abstractions.Core;
 
 namespace Ordering.Core.Queries;
 
-public record GetCheckoutDetails(Guid CustomerId, string CouponCode) : ICommand<CheckoutDetailsReadModel>;
+public record GetCheckoutDetails(Guid CustomerId, string CouponCode) : IQuery<CheckoutDetailsReadModel>;
 
 internal class GetCheckoutDetailsHandler(
     ICartRepository cartRepository)
-    : ICommandHandler<GetCheckoutDetails, CheckoutDetailsReadModel>
+    : IQueryHandler<GetCheckoutDetails, CheckoutDetailsReadModel>
 {
     public async Task<Result<CheckoutDetailsReadModel>> Handle(GetCheckoutDetails query, CancellationToken cancellationToken)
     {

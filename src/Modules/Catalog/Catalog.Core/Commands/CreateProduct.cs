@@ -7,18 +7,19 @@ using Shared.Abstractions.Core;
 namespace Catalog.Core.Commands;
 
 public sealed record CreateProduct(
+    Guid Id,
     string Name,
     string? Description,
     Guid? CategoryId
-) : ICommand<Product>;
+) : ICommand;
 
 
 internal sealed class CreateProductHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository)
-    : ICommandHandler<CreateProduct, Product>
+    : ICommandHandler<CreateProduct>
 {
-    public async Task<Result<Product>> Handle(CreateProduct command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(CreateProduct command, CancellationToken cancellationToken)
     {
         if (command.CategoryId != null)
         {
@@ -29,17 +30,18 @@ internal sealed class CreateProductHandler(
         }
 
         var result = Product.Create(
+            command.Id,
             command.Name,
             command.Description,
             command.CategoryId);
 
         if (result.IsFailed)
-            return result;
+            return Result.Fail(result.Errors);
 
         var product = result.Value;
 
         await productRepository.AddAsync(product, cancellationToken);
-        return result;
+        return Result.Ok();
     }
 
 }

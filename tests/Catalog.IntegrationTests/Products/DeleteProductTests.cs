@@ -13,21 +13,21 @@ public class DeleteProductTests : IntegrationTestBase
     public async Task DeleteProduct_Success()
     {
         // Arrange
-        var productName = faker.Commerce.ProductName();
-        var description = faker.Commerce.ProductDescription();
-        var createResult = await mediator.Send(new CreateProduct(productName, description, null));
-        Assert.True(createResult.IsSuccess);
-
-        var command = new DeleteProduct(createResult.Value.Id);
+        var productId = Guid.NewGuid();
+        await mediator.Send(new CreateProduct(
+            productId,
+            faker.Commerce.ProductName(),
+            faker.Commerce.ProductDescription(),
+            null));
 
         // Act
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(new DeleteProduct(productId));
 
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify deletion
-        var deletedProduct = await productRepository.GetByIdAsync(createResult.Value.Id);
+        // Verify persistence
+        var deletedProduct = await productRepository.GetByIdAsync(productId);
         Assert.Null(deletedProduct);
     }
 
@@ -35,11 +35,10 @@ public class DeleteProductTests : IntegrationTestBase
     public async Task DeleteProduct_Failure_ProductNotFound()
     {
         // Arrange
-        var nonExistentId = Guid.NewGuid();
-        var command = new DeleteProduct(nonExistentId);
+        var nonExistentProductId = Guid.NewGuid();
 
         // Act
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(new DeleteProduct(nonExistentProductId));
 
         // Assert
         Assert.True(result.IsFailed);

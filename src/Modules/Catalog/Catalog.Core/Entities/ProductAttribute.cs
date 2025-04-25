@@ -11,17 +11,19 @@ public class ProductAttribute : AggregateRoot
     {
     }
 
-    private ProductAttribute(string name)
+    private ProductAttribute(Guid id, string name)
     {
-        Id = Guid.NewGuid();
+        Id = id;
         Name = name.ToLower();
     }
 
-    public static Result<ProductAttribute> Create(string name)
+    public static Result<ProductAttribute> Create(Guid id, string name)
     {
+        if (id == Guid.Empty)
+            return Result.Fail(new ValidationError("Id is required."));
         if (string.IsNullOrEmpty(name))
             return Result.Fail(new ValidationError("Attribute name is required."));
 
-        return Result.Ok(new ProductAttribute(name));
+        return Result.Ok(new ProductAttribute(id, name));
     }
 }

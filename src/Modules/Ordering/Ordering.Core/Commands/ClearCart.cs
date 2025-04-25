@@ -15,7 +15,7 @@ internal sealed class DeleteCartHandler(ICartRepository cartRepository)
         var cart = await cartRepository.GetAsync(command.OwnerId, cancellationToken);
         if (cart == null)
         {
-            cart = new Cart(command.OwnerId);
+            cart = new Cart(Guid.NewGuid(), command.OwnerId);
         }
 
         cart.Items.Clear();

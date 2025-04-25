@@ -1,5 +1,4 @@
 ﻿using Catalog.Core.Entities;
-using Catalog.Core.ReadModels;
 using Catalog.Core.Repositories;
 using FluentResults;
 using Shared.Abstractions.Application;
@@ -7,16 +6,16 @@ using Shared.Abstractions.Core;
 
 namespace Catalog.Core.Commands;
 
-public sealed record CreateCategory(string Name, Guid? ParentCategoryId)
-    : ICommand<CategoryReadModel>;
+public sealed record CreateCategory(Guid Id, string Name, Guid? ParentCategoryId)
+    : ICommand;
 
 internal sealed class CreateCategoryHandler(
     ICategoryRepository categoryRepository)
-    : ICommandHandler<CreateCategory, CategoryReadModel>
+    : ICommandHandler<CreateCategory>
 {
-    public async Task<Result<CategoryReadModel>> Handle(CreateCategory command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(CreateCategory command, CancellationToken cancellationToken)
     {
-        var result = Category.Create(command.Name);
+        var result = Category.Create(command.Id, command.Name);
         if (result.IsFailed)
         {
             return Result.Fail(result.Errors);
@@ -36,17 +35,7 @@ internal sealed class CreateCategoryHandler(
 
         await categoryRepository.AddAsync(category, cancellationToken);
 
-        return Result.Ok(new CategoryReadModel()
-        {
-            Id = category.Id,
-            Name = category.Name,
-            SubCategories = category.SubCategories.Select(c => new CategoryReadModel()
-            {
-                Id = c.Id,
-                Name = c.Name
-            }).ToList(),
-            ParentCategoryId = category.ParentCategoryId
-        });
+        return Result.Ok();
 
     }
 

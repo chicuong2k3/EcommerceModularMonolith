@@ -4,6 +4,7 @@ using Ordering.Core.Entities;
 using Ordering.Core.ReadModels;
 using Ordering.Core.Repositories;
 using Shared.Abstractions.Application;
+using Shared.Abstractions.Core;
 
 namespace Ordering.Core.Queries;
 
@@ -20,8 +21,7 @@ internal sealed class GetCartHandler(
         var cart = await cartRepository.GetAsync(query.OwnerId, cancellationToken);
         if (cart == null)
         {
-            cart = new Cart(query.OwnerId);
-            await cartRepository.UpsertAsync(cart, cancellationToken);
+            return Result.Fail(new NotFoundError($"Cart not found for this user '{query.OwnerId}'"));
         }
 
         // Get product information for each cart item

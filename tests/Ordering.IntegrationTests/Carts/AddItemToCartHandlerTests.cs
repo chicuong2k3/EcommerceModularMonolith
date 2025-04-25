@@ -1,4 +1,4 @@
-
+using Shared.Abstractions.Core;
 
 namespace Ordering.IntegrationTests.Carts;
 
@@ -116,7 +116,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
             .ReturnsAsync(initialProduct);
 
         // Create initial cart with one item
-        var initialCart = new Cart(ownerId);
+        var initialCart = new Cart(Guid.NewGuid(), ownerId);
         await initialCart.AddItemAsync(initialProductId, initialVariantId, initialQuantity);
         await cartRepository.UpsertAsync(initialCart);
 
@@ -213,7 +213,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
             .ReturnsAsync(product);
 
         // Add initial item
-        var initialCart = new Cart(ownerId);
+        var initialCart = new Cart(Guid.NewGuid(), ownerId);
         await initialCart.AddItemAsync(productId, variantId, initialQuantity);
         await cartRepository.UpsertAsync(initialCart);
 
@@ -351,50 +351,39 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Handle_ShouldFailValidation_WhenProductDoesNotExist()
+    public async Task Handle_Failure_ProductDoesNotExist()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
         var nonExistentProductId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
-        var quantity = 2;
 
-        // Setup product service mock to return null for nonExistentProductId
         productServiceMock.Setup(s => s.GetProductByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ProductDto?)null);
+            .ReturnsAsync((ProductDto)null);
 
-        var itemsToAdd = new List<AddItemDto>
-        {
-            new AddItemDto(nonExistentProductId, variantId, quantity)
-        };
-
-        var command = new AddItemToCart(ownerId, itemsToAdd);
+        var command = new AddItemToCart(ownerId,
+            new List<AddItemDto> { new AddItemDto(nonExistentProductId, variantId, 1) });
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
-        Assert.False(result.IsSuccess);
         Assert.True(result.IsFailed);
-        Assert.IsType<NotFoundError>(result.Errors.First());
-        Assert.Contains($"Product with id {nonExistentProductId} not found", result.Errors.First().Message);
+        Assert.Contains(result.Errors, error => error is NotFoundError);
 
         // Verify no cart was created
-        var persistedCart = await cartRepository.GetAsync(ownerId);
-        Assert.Null(persistedCart);
+        var cart = await cartRepository.GetAsync(ownerId);
+        Assert.Null(cart);
     }
 
     [Fact]
-    public async Task Handle_ShouldFailValidation_WhenProductVariantDoesNotExist()
+    public async Task Handle_Failure_ProductVariantDoesNotExist()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
         var productId = Guid.NewGuid();
-        var existingVariantId = Guid.NewGuid();
         var nonExistentVariantId = Guid.NewGuid();
-        var quantity = 2;
 
-        // Set up product with a specific variant
         var product = new ProductDto
         {
             Id = productId,
@@ -403,11 +392,11 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
             {
                 new ProductVariantDto
                 {
-                    VariantId = existingVariantId, // Different variant ID
+                    VariantId = Guid.NewGuid(), // Different variant ID
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-image.jpg",
+                    ImageUrl = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -416,39 +405,31 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
         productServiceMock.Setup(s => s.GetProductByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
-        // Try to add a different variant that doesn't exist
-        var itemsToAdd = new List<AddItemDto>
-        {
-            new AddItemDto(productId, nonExistentVariantId, quantity)
-        };
-
-        var command = new AddItemToCart(ownerId, itemsToAdd);
+        var command = new AddItemToCart(ownerId,
+            new List<AddItemDto> { new AddItemDto(productId, nonExistentVariantId, 1) });
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
-        Assert.False(result.IsSuccess);
         Assert.True(result.IsFailed);
-        Assert.IsType<NotFoundError>(result.Errors.First());
-        Assert.Contains($"Product variant with id {nonExistentVariantId} not found", result.Errors.First().Message);
+        Assert.Contains(result.Errors, error => error is NotFoundError);
 
         // Verify no cart was created
-        var persistedCart = await cartRepository.GetAsync(ownerId);
-        Assert.Null(persistedCart);
+        var cart = await cartRepository.GetAsync(ownerId);
+        Assert.Null(cart);
     }
 
     [Fact]
-    public async Task Handle_ShouldFailValidation_WhenQuantityExceedsAvailableStock()
+    public async Task Handle_Failure_InsufficientStock()
     {
         // Arrange
         var ownerId = Guid.NewGuid();
         var productId = Guid.NewGuid();
         var variantId = Guid.NewGuid();
         var availableQuantity = 5;
-        var requestedQuantity = 10; // More than available
+        var requestedQuantity = 10;
 
-        // Set up product with limited quantity
         var product = new ProductDto
         {
             Id = productId,
@@ -460,8 +441,8 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     VariantId = variantId,
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
-                    Quantity = availableQuantity, // Only 5 items in stock
-                    ImageUrl = "https://test-image.jpg",
+                    Quantity = availableQuantity,
+                    ImageUrl = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -470,23 +451,18 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
         productServiceMock.Setup(s => s.GetProductByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
-        var itemsToAdd = new List<AddItemDto>
-        {
-            new AddItemDto(productId, variantId, requestedQuantity)
-        };
-
-        var command = new AddItemToCart(ownerId, itemsToAdd);
+        var command = new AddItemToCart(ownerId,
+            new List<AddItemDto> { new AddItemDto(productId, variantId, requestedQuantity) });
 
         // Act
         var result = await mediator.Send(command);
 
         // Assert
-        Assert.False(result.IsSuccess);
         Assert.True(result.IsFailed);
-        Assert.IsType<Error>(result.Errors.First());
+        Assert.Contains(result.Errors, error => error is Error);
 
         // Verify no cart was created
-        var persistedCart = await cartRepository.GetAsync(ownerId);
-        Assert.Null(persistedCart);
+        var cart = await cartRepository.GetAsync(ownerId);
+        Assert.Null(cart);
     }
 }

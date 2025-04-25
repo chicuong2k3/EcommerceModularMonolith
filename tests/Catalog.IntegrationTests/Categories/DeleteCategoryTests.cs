@@ -1,3 +1,5 @@
+using Shared.Abstractions.Core;
+
 namespace Catalog.IntegrationTests.Categories;
 
 public class DeleteCategoryTests : IntegrationTestBase
@@ -13,9 +15,12 @@ public class DeleteCategoryTests : IntegrationTestBase
     public async Task DeleteCategory_Success()
     {
         // Arrange
-        var category = Category.Create(faker.Commerce.Categories(1)[0]).Value;
-        await categoryRepository.AddAsync(category);
-        var command = new DeleteCategory(category.Id);
+        var categoryId = Guid.NewGuid();
+        var categoryName = faker.Commerce.Categories(1)[0];
+        var createResult = await mediator.Send(new CreateCategory(categoryId, categoryName, null));
+        Assert.True(createResult.IsSuccess);
+
+        var command = new DeleteCategory(categoryId);
 
         // Act
         var result = await mediator.Send(command);
@@ -24,7 +29,7 @@ public class DeleteCategoryTests : IntegrationTestBase
         Assert.True(result.IsSuccess);
 
         // Verify deletion
-        var deletedCategory = await categoryRepository.GetByIdAsync(category.Id);
+        var deletedCategory = await categoryRepository.GetByIdAsync(categoryId);
         Assert.Null(deletedCategory);
     }
 
@@ -47,13 +52,17 @@ public class DeleteCategoryTests : IntegrationTestBase
     public async Task DeleteCategory_Success_RemovesFromParent()
     {
         // Arrange
-        var parentCategory = Category.Create(faker.Commerce.Categories(1)[0]).Value;
-        var childCategory = Category.Create(faker.Commerce.Categories(1)[0]).Value;
+        var parentId = Guid.NewGuid();
+        var parentName = faker.Commerce.Categories(1)[0];
+        var parentResult = await mediator.Send(new CreateCategory(parentId, parentName, null));
+        Assert.True(parentResult.IsSuccess);
 
-        parentCategory.AddSubCategory(childCategory);
-        await categoryRepository.AddAsync(parentCategory);
+        var childId = Guid.NewGuid();
+        var childName = faker.Commerce.Categories(1)[0];
+        var childResult = await mediator.Send(new CreateCategory(childId, childName, parentId));
+        Assert.True(childResult.IsSuccess);
 
-        var command = new DeleteCategory(childCategory.Id);
+        var command = new DeleteCategory(childId);
 
         // Act
         var result = await mediator.Send(command);
@@ -61,25 +70,25 @@ public class DeleteCategoryTests : IntegrationTestBase
         // Assert
         Assert.True(result.IsSuccess);
 
-        // Verify child deleted
-        var deletedChild = await categoryRepository.GetByIdAsync(childCategory.Id);
+        // Verify child was deleted
+        var deletedChild = await categoryRepository.GetByIdAsync(childId);
         Assert.Null(deletedChild);
 
-        // Verify parent no longer contains child
-        var updatedParent = await categoryRepository.GetByIdAsync(parentCategory.Id);
-        Assert.NotNull(updatedParent);
-        Assert.DoesNotContain(updatedParent.SubCategories, c => c.Id == childCategory.Id);
+        // Verify parent no longer has the child
+        var parent = await categoryRepository.GetByIdAsync(parentId);
+        Assert.NotNull(parent);
+        Assert.DoesNotContain(parent.SubCategories, c => c.Id == childId);
     }
 
     [Fact]
     public async Task DeleteCategory_Success_WithSubcategories()
     {
         // Arrange
-        var parentCategory = Category.Create(faker.Commerce.Categories(1)[0]).Value;
+        var parentCategory = Category.Create(Guid.NewGuid(), faker.Commerce.Categories(1)[0]).Value;
 
         // Add subcategories
-        var subCategory1 = Category.Create(faker.Commerce.Categories(1)[0]).Value;
-        var subCategory2 = Category.Create(faker.Commerce.Categories(1)[0]).Value;
+        var subCategory1 = Category.Create(Guid.NewGuid(), faker.Commerce.Categories(1)[0]).Value;
+        var subCategory2 = Category.Create(Guid.NewGuid(), faker.Commerce.Categories(1)[0]).Value;
 
         parentCategory.AddSubCategory(subCategory1);
         parentCategory.AddSubCategory(subCategory2);

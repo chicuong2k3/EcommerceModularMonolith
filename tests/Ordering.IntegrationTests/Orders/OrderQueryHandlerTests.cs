@@ -198,6 +198,7 @@ public class OrderQueryHandlerTests : IntegrationTestBase
             "Color: Blue, Size: M").Value;
 
         var orderResult = Order.Create(
+            Guid.NewGuid(),
             customerId,
             paymentInfo,
             shippingInfo,
@@ -263,6 +264,7 @@ public class OrderQueryHandlerTests : IntegrationTestBase
                 "Color: Blue, Size: M").Value;
 
             var orderResult = Order.Create(
+                Guid.NewGuid(),
                 customerId,
                 paymentInfo,
                 shippingInfo,
