@@ -66,7 +66,7 @@ public class Order : AggregateRoot
     {
         switch (PaymentInfo.PaymentMethod)
         {
-            case PaymentMethod.BankTransfer:
+            case PaymentMethod.VNPay:
             case PaymentMethod.MoMo:
                 Raise(new OrderPlacedForOnlinePayment(
                     Id,

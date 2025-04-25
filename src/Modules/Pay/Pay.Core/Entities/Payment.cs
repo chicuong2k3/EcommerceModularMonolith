@@ -12,12 +12,13 @@ public class Payment : AggregateRoot
     public Guid CustomerId { get; private set; }
     public Money TotalAmount { get; private set; }
     public PaymentStatus Status { get; private set; }
+    public PaymentProvider PaymentProvider { get; private set; }
     public string? PaymentUrl { get; private set; }
     public string? PaymentToken { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    public DateTime? ExpiryTime { get; private set; }
-    private List<Transaction> transactions = new();
-    public IReadOnlyCollection<Transaction> Transactions => transactions.AsReadOnly();
+    public DateTime? PaidAt { get; private set; }
+
+    public string? ProviderTransactionId { get; private set; }
 
     private Payment() { }
 
@@ -25,15 +26,16 @@ public class Payment : AggregateRoot
         Guid id,
         Guid orderId,
         Guid customerId,
-        Money totalAmount)
+        Money totalAmount,
+        PaymentProvider paymentProvider)
     {
         Id = id;
         OrderId = orderId;
         CustomerId = customerId;
         TotalAmount = totalAmount;
         Status = PaymentStatus.Pending;
+        PaymentProvider = paymentProvider;
         CreatedAt = DateTime.UtcNow;
-        ExpiryTime = CreatedAt.AddMinutes(15);
     }
 
     public void SetPaymentUrlAndToken(string paymentUrl, string paymentToken)
@@ -46,57 +48,37 @@ public class Payment : AggregateRoot
         Status = PaymentStatus.UrlGenerated;
     }
 
-    public async Task<Result> AuthorizeAsync(IPaymentGateway gateway, CancellationToken cancellationToken = default)
+    public Result ProcessCallback(string providerTransactionId, PaymentResponseCode responseCode)
     {
-        if (Status != PaymentStatus.UrlGenerated)
-            return Result.Fail("Payment must have URL generated before authorization");
+        // Validate payment status
+        if (Status != PaymentStatus.UrlGenerated && Status != PaymentStatus.Pending)
+            return Result.Fail("Invalid payment status for callback processing");
 
-        if (DateTime.UtcNow > ExpiryTime)
+        if (CreatedAt.AddMinutes(30) < DateTime.UtcNow)
+        {
+            Status = PaymentStatus.Expired;
             return Result.Fail("Payment URL has expired");
-
-        var transaction = new Transaction(TotalAmount, gateway.Reference);
-        transactions.Add(transaction);
-
-        var result = await gateway.AuthorizeAsync(this, transaction, cancellationToken);
-        if (result.IsSuccess)
-        {
-            transaction.Status = TransactionStatus.Succeeded;
-            if (transactions.Sum(t => t.Amount) >= TotalAmount)
-            {
-                Status = PaymentStatus.Succeeded;
-                Raise(new PaymentSucceeded(OrderId));
-            }
-        }
-        else
-        {
-            transaction.Status = TransactionStatus.Failed;
-            Status = PaymentStatus.Failed;
-            Raise(new PaymentFailed(OrderId, result.Errors.Select(e => e.Message)));
         }
 
-        return result;
-    }
+        ProviderTransactionId = providerTransactionId;
 
-    public Result ProcessCallback(string paymentToken, string transactionId, string status)
-    {
-        if (PaymentToken != paymentToken)
-            return Result.Fail("Invalid payment token");
-
-        if (DateTime.UtcNow > ExpiryTime)
-            return Result.Fail("Payment URL has expired");
-
-        switch (status.ToLower())
+        switch (responseCode)
         {
-            case "success":
+            case PaymentResponseCode.Success:
                 Status = PaymentStatus.Succeeded;
+                PaidAt = DateTime.UtcNow;
                 Raise(new PaymentSucceeded(OrderId));
                 break;
-            case "failed":
+
+            case PaymentResponseCode.Canceled:
+                Status = PaymentStatus.Canceled;
+                Raise(new PaymentCanceled(OrderId));
+                break;
+
+            case PaymentResponseCode.Failed:
                 Status = PaymentStatus.Failed;
-                Raise(new PaymentFailed(OrderId, new[] { "Payment failed" }));
+                Raise(new PaymentFailed(OrderId));
                 break;
-            default:
-                return Result.Fail("Invalid payment status");
         }
 
         return Result.Ok();
@@ -105,25 +87,33 @@ public class Payment : AggregateRoot
     public Result Cancel()
     {
         if (Status != PaymentStatus.Pending && Status != PaymentStatus.UrlGenerated)
-            return Result.Fail("Can only cancel pending payments");
+            return Result.Fail("Can only cancel pending or URL generated payments");
 
         Status = PaymentStatus.Canceled;
-        //Raise(new PaymentCanceled(OrderId));
+        Raise(new PaymentCanceled(OrderId));
         return Result.Ok();
     }
 
-    public async Task<Result> RefundAsync(IPaymentGateway gateway, Money amount, CancellationToken cancellationToken = default)
+    public async Task<Result> RefundAsync(
+        IPaymentGateway gateway,
+        decimal refundAmount,
+        string reason,
+        CancellationToken cancellationToken = default)
     {
         if (Status != PaymentStatus.Succeeded)
             return Result.Fail("Only succeeded payments can be refunded");
 
-        var refundTransaction = new Transaction(amount, gateway.Reference);
-        var result = await gateway.RefundAsync(this, refundTransaction, cancellationToken);
+        if (refundAmount <= 0)
+            return Result.Fail("Refund amount must be greater than zero");
+
+        if (refundAmount > TotalAmount.Amount)
+            return Result.Fail("Refund amount cannot exceed payment amount");
+
+        var result = await gateway.RefundAsync(this, refundAmount, reason, cancellationToken);
         if (result.IsSuccess)
         {
             Status = PaymentStatus.Refunded;
-            refundTransaction.Status = TransactionStatus.Succeeded;
-            //Raise(new PaymentRefunded(OrderId, amount));
+            Raise(new PaymentRefunded(Id, refundAmount, reason));
         }
 
         return result;

@@ -1,7 +1,3 @@
-using Catalog.Core.Commands;
-using Catalog.Core.Repositories;
-using Shared.Abstractions.Core;
-
 namespace Catalog.IntegrationTests.Products;
 
 public class UpdateQuantityTests : IntegrationTestBase

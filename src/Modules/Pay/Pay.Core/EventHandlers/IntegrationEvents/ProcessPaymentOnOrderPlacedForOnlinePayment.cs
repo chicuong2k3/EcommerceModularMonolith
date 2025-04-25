@@ -13,26 +13,20 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
     : IntegrationEventHandler<OrderPlacedForOnlinePaymentIntegrationEvent>
 {
     private readonly ILogger<ProcessPaymentOnOrderPlacedForOnlinePayment> logger;
-    private readonly IEventBus eventBus;
     private readonly IPaymentGatewayFactory paymentGatewayFactory;
     private readonly IMediator mediator;
     private readonly IPaymentRepository paymentRepository;
-    private readonly string returnUrl;
 
     public ProcessPaymentOnOrderPlacedForOnlinePayment(
         ILogger<ProcessPaymentOnOrderPlacedForOnlinePayment> logger,
-        IEventBus eventBus,
         IPaymentGatewayFactory paymentGatewayFactory,
         IMediator mediator,
-        IPaymentRepository paymentRepository,
-        PaymentSettings paymentSettings)
+        IPaymentRepository paymentRepository)
     {
         this.logger = logger;
-        this.eventBus = eventBus;
         this.paymentGatewayFactory = paymentGatewayFactory;
         this.mediator = mediator;
         this.paymentRepository = paymentRepository;
-        returnUrl = paymentSettings.ReturnUrl;
     }
 
     public override async Task Handle(OrderPlacedForOnlinePaymentIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
@@ -40,7 +34,7 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
         try
         {
             var createPaymentResult = await mediator.Send(
-                new CreatePayment(Guid.NewGuid(), integrationEvent.OrderId, integrationEvent.CustomerId, integrationEvent.TotalAmount),
+                new CreatePayment(Guid.NewGuid(), integrationEvent.OrderId, integrationEvent.CustomerId, integrationEvent.TotalAmount, integrationEvent.PaymentProvider),
                 cancellationToken);
 
             if (createPaymentResult.IsFailed)
@@ -50,9 +44,9 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
                 throw new Exception("Payment creation failed");
             }
 
-            var paymentMethod = Enum.Parse<PaymentMethod>(integrationEvent.PaymentMethod);
 
-            var gateway = paymentGatewayFactory.CreateGateway(paymentMethod);
+            var paymentProvider = Enum.Parse<PaymentProvider>(integrationEvent.PaymentProvider);
+            var gateway = paymentGatewayFactory.CreateGateway(paymentProvider);
             var payment = await paymentRepository.GetPaymentByOrderIdAsync(integrationEvent.OrderId, cancellationToken);
 
             if (payment == null)
@@ -61,10 +55,7 @@ internal class ProcessPaymentOnOrderPlacedForOnlinePayment
                 throw new Exception("Payment not found");
             }
 
-            var paymentUrlResult = await gateway.CreatePaymentUrlAsync(
-                payment,
-                returnUrl,
-                cancellationToken);
+            var paymentUrlResult = gateway.CreatePaymentUrl(payment);
 
             if (paymentUrlResult.IsFailed)
             {

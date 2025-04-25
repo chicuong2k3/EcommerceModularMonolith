@@ -26,7 +26,7 @@ internal class PublishEventOnOrderPlacedForOnlinePayment
             domainEvent.OrderId,
             domainEvent.CustomerId,
             domainEvent.TotalAmount,
-            domainEvent.PaymentMethod
+            domainEvent.PaymentProvider
         );
 
         await eventBus.PublishAsync(@event, cancellationToken);

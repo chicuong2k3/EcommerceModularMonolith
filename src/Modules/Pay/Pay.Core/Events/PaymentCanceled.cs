@@ -2,4 +2,4 @@
 
 namespace Pay.Core.Events;
 
-public record PaymentFailed(Guid OrderId) : DomainEvent;
+public record PaymentCanceled(Guid OrderId) : DomainEvent;

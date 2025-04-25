@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pay.Core.Entities;
+using Shared.Infrastructure.Inbox;
+using Shared.Infrastructure.Outbox;
 
-namespace Pay.Infrastructure.Persistence;
+namespace Pay.Core.Persistence;
 
 public class PayDbContext : DbContext
 {
@@ -15,10 +17,13 @@ public class PayDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("billing");
+        modelBuilder.HasDefaultSchema("pay");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PayDbContext).Assembly);
     }
 
     public DbSet<Payment> Payments { get; set; }
-    public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<InboxMessage> InboxMessages { get; set; }
+    public DbSet<InboxMessageConsumer> InboxMessageConsumers { get; set; }
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
+    public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
 }

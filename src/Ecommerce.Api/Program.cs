@@ -6,6 +6,8 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Ordering.Core;
 using Ordering.Core.Persistence;
+using Pay.Core;
+using Pay.Core.Persistence;
 using Reporting.Core;
 using Serilog;
 using Shared.Infrastructure;
@@ -19,23 +21,23 @@ AspNetCoreResult.Setup(config => config.DefaultProfile = new CustomAspNetCoreRes
 builder.Services.RegisterCommonServices(
     builder.Configuration,
     [
-        Catalog.Core.CatalogModule.ConfigureConsumers,
-        Ordering.Core.OrderingModule.ConfigureConsumers,
-        //Billing.Infrastructure.BillingModule.ConfigureConsumers
+        CatalogModule.ConfigureConsumers,
+        OrderingModule.ConfigureConsumers,
+        PayModule.ConfigureConsumers
     ],
     [
         Catalog.Core.AssemblyInfo.Ref,
         Ordering.Core.AssemblyInfo.Ref,
-        //Billing.Application.AssemblyInfo.Ref
+        Pay.Core.AssemblyInfo.Ref
     ],
     typeof(CatalogDbContext),
-    typeof(OrderingDbContext)
-//typeof(BillingDbContext)
+    typeof(OrderingDbContext),
+    typeof(PayDbContext)
 );
 
 builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddOrderingModule(builder.Configuration);
-//builder.Services.AddBillingModule(builder.Configuration);
+builder.Services.AdPayModule(builder.Configuration);
 builder.Services.AddReportingModule(builder.Configuration);
 
 builder.Services.AddControllers();
@@ -67,7 +69,7 @@ app.MapControllers();
 
 app.UseCatalogModule();
 app.UseOrderingModule();
-//app.UseBillingModule();
+app.UsePayModule();
 app.UseReportingModule();
 
 app.Run();

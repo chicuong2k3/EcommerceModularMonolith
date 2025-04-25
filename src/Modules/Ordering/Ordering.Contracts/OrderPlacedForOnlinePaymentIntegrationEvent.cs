@@ -9,16 +9,16 @@ public class OrderPlacedForOnlinePaymentIntegrationEvent : IntegrationEvent
         Guid orderId,
         Guid customerId,
         decimal totalAmount,
-        string paymentMethod)
+        string paymentProvider)
     {
         OrderId = orderId;
         CustomerId = customerId;
         TotalAmount = totalAmount;
-        PaymentMethod = paymentMethod;
+        PaymentProvider = paymentProvider;
     }
 
     public Guid OrderId { get; }
     public Guid CustomerId { get; }
     public decimal TotalAmount { get; }
-    public string PaymentMethod { get; }
+    public string PaymentProvider { get; }
 }

@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pay.Core.Entities;
+using Pay.Core.Persistence;
 using Pay.Core.Repositories;
 
-namespace Pay.Infrastructure.Persistence.Repositories;
+namespace Pay.Core.Persistence.Repositories;
 
 internal class PaymentRepository : IPaymentRepository
 {
@@ -22,7 +23,6 @@ internal class PaymentRepository : IPaymentRepository
     public async Task<Payment?> GetPaymentByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await dbContext.Payments
-            .Include(p => p.Transactions)
             .FirstOrDefaultAsync(p => p.OrderId == orderId, cancellationToken);
     }
 

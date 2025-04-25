@@ -4,5 +4,5 @@ namespace Pay.Core.Services;
 
 public interface IPaymentGatewayFactory
 {
-    IPaymentGateway CreateGateway(PaymentMethod paymentMethod);
+    IPaymentGateway CreateGateway(PaymentProvider paymentProvider);
 }

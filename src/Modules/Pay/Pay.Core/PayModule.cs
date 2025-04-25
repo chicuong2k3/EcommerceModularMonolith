@@ -2,16 +2,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MassTransit;
 using Microsoft.AspNetCore.Builder;
-using Pay.Infrastructure.Persistence;
-using Pay.Infrastructure.Gateways;
-using Pay.Infrastructure.Persistence.Repositories;
 using Shared.Infrastructure.Inbox;
 using Ordering.Contracts;
-using Pay.Core;
 using Pay.Core.Services;
 using Pay.Core.Repositories;
+using Pay.Core.Persistence;
+using Pay.Core.Persistence.Repositories;
 
-namespace Pay.Infrastructure;
+namespace Pay.Core;
 
 public static class PayModule
 {
@@ -23,8 +21,9 @@ public static class PayModule
         // Register payment gateway
         services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
         services.AddScoped<IPaymentGateway, MomoGateway>();
-        services.AddSingleton<PaymentSettings>();
-        services.Configure<PaymentSettings>(configuration.GetSection("PaymentSettings"));
+
+        services.Configure<VNPayConfig>(configuration.GetSection("VNPayConfig"));
+        services.AddScoped<IPaymentGateway, VNPayGateway>();
     }
 
     public static void ConfigureConsumers(this IRegistrationConfigurator registrationConfiguration)
@@ -32,7 +31,7 @@ public static class PayModule
         registrationConfiguration.AddConsumer<IntegrationEventsToInboxMessagesConverter<OrderPlacedForOnlinePaymentIntegrationEvent, PayDbContext>>();
     }
 
-    public static IApplicationBuilder UseBillingModule(this IApplicationBuilder app)
+    public static IApplicationBuilder UsePayModule(this IApplicationBuilder app)
     {
         return app;
     }

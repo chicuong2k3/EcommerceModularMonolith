@@ -3,6 +3,6 @@
 public enum PaymentMethod
 {
     COD,
-    BankTransfer,
+    VNPay,
     MoMo
 }

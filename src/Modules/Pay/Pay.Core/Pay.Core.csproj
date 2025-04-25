@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Folder Include="Persistence\Configurations\" />
+		<Folder Include="EventHandlers\DomainEvents\" />
 		<Folder Include="Queries\" />
 	</ItemGroup>
 

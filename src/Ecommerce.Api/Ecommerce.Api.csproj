@@ -35,6 +35,7 @@
 		<ProjectReference Include="..\Modules\Ordering\Ordering.ApiContracts\Ordering.ApiContracts.csproj" />
 		<ProjectReference Include="..\Modules\Ordering\Ordering.Core\Ordering.Core.csproj" />
 		<ProjectReference Include="..\Modules\Pay\Pay.ApiContracts\Pay.ApiContracts.csproj" />
+		<ProjectReference Include="..\Modules\Pay\Pay.Core\Pay.Core.csproj" />
 		<ProjectReference Include="..\Modules\Reporting\Reporting.Core\Reporting.Core.csproj" />
 	</ItemGroup>
 </Project>
