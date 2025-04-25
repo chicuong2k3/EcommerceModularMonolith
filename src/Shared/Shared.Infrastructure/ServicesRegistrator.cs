@@ -5,11 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
-using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 using Npgsql;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -188,31 +183,10 @@ public static class ServicesRegistrator
             }
         });
 
-
-        //var mongoConnectionString = configuration.GetConnectionString("Mongo");
-        //var mongoClientSettings = MongoClientSettings.FromConnectionString(mongoConnectionString);
-        //mongoClientSettings.ClusterConfigurator = cb =>
-        //{
-        //    cb.Subscribe(new DiagnosticsActivityEventSubscriber(new InstrumentationOptions()
-        //    {
-        //        CaptureCommandText = true
-        //    }));
-        //};
-
-        //services.AddSingleton<IMongoClient>(sp =>
-        //{
-        //    var mongoClient = new MongoClient(mongoClientSettings);
-        //    return mongoClient;
-        //});
-
-
-        //BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
-
         // Add Health Checks
         services.AddHealthChecks()
            .AddNpgSql(dbConnectionString)
            .AddRedis(cacheConnectionString);
-        //.AddMongoDb(sp => sp.GetRequiredService<IMongoClient>());
 
 
         // OpenTelemetry
@@ -227,7 +201,6 @@ public static class ServicesRegistrator
                     .AddNpgsql()
                     .AddRedisInstrumentation()
                     .AddSource(DiagnosticHeaders.DefaultListenerName)
-                    //.AddSource("MongoDB.Driver.Core.Extensions.DiagnosticSources")
                     .AddOtlpExporter();
             });
 

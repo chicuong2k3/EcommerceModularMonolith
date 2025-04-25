@@ -8,7 +8,7 @@ namespace Catalog.Core.Commands;
 public sealed record DeleteCategory(Guid Id) : ICommand;
 
 internal sealed class DeleteCategoryHandler(
-    IWriteCategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository)
     : ICommandHandler<DeleteCategory>
 {
     public async Task<Result> Handle(DeleteCategory command, CancellationToken cancellationToken)

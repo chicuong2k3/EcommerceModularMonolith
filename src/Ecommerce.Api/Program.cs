@@ -1,14 +1,14 @@
-using Catalog.Infrastructure;
-using Catalog.Infrastructure.Persistence;
+using Catalog.Core;
+using Catalog.Core.Persistence;
 using Ecommerce.Api;
 using Ecommerce.Api.Logging;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Ordering.Infrastructure;
-using Ordering.Infrastructure.Persistence;
+using Ordering.Core;
+using Ordering.Core.Persistence;
+using Reporting.Core;
 using Serilog;
 using Shared.Infrastructure;
-using Reporting.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +19,8 @@ AspNetCoreResult.Setup(config => config.DefaultProfile = new CustomAspNetCoreRes
 builder.Services.RegisterCommonServices(
     builder.Configuration,
     [
-        Catalog.Infrastructure.CatalogModule.ConfigureConsumers,
-        Ordering.Infrastructure.OrderingModule.ConfigureConsumers,
+        Catalog.Core.CatalogModule.ConfigureConsumers,
+        Ordering.Core.OrderingModule.ConfigureConsumers,
         //Billing.Infrastructure.BillingModule.ConfigureConsumers
     ],
     [

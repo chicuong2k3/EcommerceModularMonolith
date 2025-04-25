@@ -1,24 +1,13 @@
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using Ordering.Core.Entities;
-using Ordering.Core.Queries;
-using Ordering.Core.ReadModels;
-using Ordering.Core.Repositories;
-using Ordering.Core.ValueObjects;
-using Shared.Abstractions.Core;
-using Xunit;
-
 namespace Ordering.IntegrationTests.Orders;
 
 public class OrderQueryHandlerTests : IntegrationTestBase
 {
-    private readonly IWriteOrderRepository writeOrderRepository;
+    private readonly IOrderRepository writeOrderRepository;
     private readonly Mock<IProductService> productServiceMock;
 
     public OrderQueryHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
-        writeOrderRepository = serviceScope.ServiceProvider.GetRequiredService<IWriteOrderRepository>();
+        writeOrderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
 
         // Set up mock for IProductService
         productServiceMock = new Mock<IProductService>();

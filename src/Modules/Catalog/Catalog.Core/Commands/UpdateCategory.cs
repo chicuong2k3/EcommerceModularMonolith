@@ -12,7 +12,7 @@ public sealed record UpdateCategory(
 ) : ICommand;
 
 internal sealed class UpdateCategoryHandler(
-    IWriteCategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository)
     : ICommandHandler<UpdateCategory>
 {
     public async Task<Result> Handle(UpdateCategory command, CancellationToken cancellationToken)

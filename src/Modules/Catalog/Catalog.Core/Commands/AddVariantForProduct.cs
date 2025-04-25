@@ -21,7 +21,7 @@ public sealed record AddVariantForProduct(
 
 
 internal sealed class AddVariantForProductHandler(
-    IWriteProductRepository productRepository,
+    IProductRepository productRepository,
     IProductAttributeRepository productAttributeRepository)
     : ICommandHandler<AddVariantForProduct>
 {

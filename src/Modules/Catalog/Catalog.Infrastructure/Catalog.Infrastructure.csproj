@@ -10,6 +10,5 @@
 		<ProjectReference Include="..\..\..\Shared\Shared.Infrastructure\Shared.Infrastructure.csproj" />
 		<ProjectReference Include="..\Catalog.Core\Catalog.Core.csproj" />
 
-		<PackageReference Include="Dapper" Version="2.1.66" />
 	</ItemGroup>
 </Project>

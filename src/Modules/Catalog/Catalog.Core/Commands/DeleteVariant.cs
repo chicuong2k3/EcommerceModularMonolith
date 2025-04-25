@@ -7,7 +7,7 @@ namespace Catalog.Core.Commands;
 
 public record DeleteVariant(Guid ProductId, Guid VariantId) : ICommand;
 
-internal class DeleteVariantHandler(IWriteProductRepository productRepository)
+internal class DeleteVariantHandler(IProductRepository productRepository)
     : ICommandHandler<DeleteVariant>
 {
     public async Task<Result> Handle(DeleteVariant command, CancellationToken cancellationToken)

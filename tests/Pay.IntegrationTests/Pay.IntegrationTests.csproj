@@ -27,6 +27,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Ecommerce.Api\Ecommerce.Api.csproj" />
 	  <ProjectReference Include="..\..\src\Ecommerce.Api\Ecommerce.Api.csproj" />
+	  <ProjectReference Include="..\..\src\Modules\Pay\Pay.Core\Pay.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

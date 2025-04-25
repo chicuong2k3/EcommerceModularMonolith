@@ -20,7 +20,7 @@ public record PlaceOrder(
     string ShippingMethod) : ICommand<Guid>;
 
 internal sealed class PlaceOrderHandler(
-    IWriteOrderRepository orderRepository,
+    IOrderRepository orderRepository,
     ICartRepository cartRepository,
     IProductService productService)
     : ICommandHandler<PlaceOrder, Guid>

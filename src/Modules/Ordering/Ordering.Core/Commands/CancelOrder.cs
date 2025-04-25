@@ -7,7 +7,7 @@ namespace Ordering.Core.Commands;
 
 public record CancelOrder(Guid OrderId) : ICommand;
 
-public class CancelOrderHandler(IWriteOrderRepository orderRepository)
+public class CancelOrderHandler(IOrderRepository orderRepository)
     : ICommandHandler<CancelOrder>
 {
     public async Task<Result> Handle(CancelOrder command, CancellationToken cancellationToken)

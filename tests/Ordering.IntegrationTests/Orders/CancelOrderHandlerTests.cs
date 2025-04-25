@@ -1,14 +1,16 @@
+using Ordering.Core.Persistence;
+
 namespace Ordering.IntegrationTests.Orders;
 
 public class CancelOrderHandlerTests : IntegrationTestBase
 {
-    private readonly IWriteOrderRepository orderRepository;
+    private readonly IOrderRepository orderRepository;
     private readonly OrderingDbContext dbContext;
     private readonly Mock<IProductService> productServiceMock;
 
     public CancelOrderHandlerTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
-        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IWriteOrderRepository>();
+        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
         dbContext = serviceScope.ServiceProvider.GetRequiredService<OrderingDbContext>();
 
         // Set up mock for IProductService

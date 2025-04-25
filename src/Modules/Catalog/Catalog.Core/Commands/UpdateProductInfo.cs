@@ -12,8 +12,8 @@ public record UpdateProductInfo(
     Guid? CategoryId) : ICommand;
 
 internal class UpdateProductInfoHandler(
-    IWriteProductRepository productRepository,
-    IWriteCategoryRepository categoryRepository)
+    IProductRepository productRepository,
+    ICategoryRepository categoryRepository)
     : ICommandHandler<UpdateProductInfo>
 {
     public async Task<Result> Handle(UpdateProductInfo command, CancellationToken cancellationToken)

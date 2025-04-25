@@ -2,11 +2,11 @@ namespace Catalog.IntegrationTests.Products;
 
 public class UpdateProductInfoTests : IntegrationTestBase
 {
-    private readonly IWriteProductRepository productRepository;
+    private readonly IProductRepository productRepository;
 
     public UpdateProductInfoTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
-        productRepository = serviceScope.ServiceProvider.GetRequiredService<IWriteProductRepository>();
+        productRepository = serviceScope.ServiceProvider.GetRequiredService<IProductRepository>();
     }
 
     [Fact]

@@ -11,7 +11,7 @@ public sealed record CreateCategory(string Name, Guid? ParentCategoryId)
     : ICommand<CategoryReadModel>;
 
 internal sealed class CreateCategoryHandler(
-    IWriteCategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository)
     : ICommandHandler<CreateCategory, CategoryReadModel>
 {
     public async Task<Result<CategoryReadModel>> Handle(CreateCategory command, CancellationToken cancellationToken)

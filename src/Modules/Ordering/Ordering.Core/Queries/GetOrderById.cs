@@ -1,22 +1,65 @@
-﻿using FluentResults;
+﻿using Dapper;
+using FluentResults;
 using Ordering.Core.ReadModels;
-using Ordering.Core.Repositories;
 using Shared.Abstractions.Application;
 using Shared.Abstractions.Core;
+using System.Data;
 
 namespace Ordering.Core.Queries;
 
 public record GetOrderById(Guid OrderId) : IQuery<OrderReadModel>;
 
-internal sealed class GetOrderByIdHandler(IReadOrderRepository orderRepository)
+internal sealed class GetOrderByIdHandler(IDbConnection dbConnection)
     : IQueryHandler<GetOrderById, OrderReadModel>
 {
     public async Task<Result<OrderReadModel>> Handle(GetOrderById query, CancellationToken cancellationToken)
     {
-        var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
+        const string orderQuery = """
+            SELECT 
+                o."Id",
+                o."CustomerId",
+                o."Status",
+                o."OrderDate",
+                o."Total",
+                o."Subtotal",
+                o."PaymentMethod",
+                o."PhoneNumber",
+                o."ShippingMethod",
+                o."ShippingCosts",
+                o."Street",
+                o."Ward",
+                o."District",
+                o."Province",
+                o."Country"
+            FROM "ordering"."Orders" o
+            WHERE o."Id" = @Id
+            """
+        ;
+
+        var order = await dbConnection.QueryFirstOrDefaultAsync<OrderReadModel>(orderQuery, new { Id = query.OrderId });
 
         if (order == null)
             return Result.Fail(new NotFoundError($"The order with id '{query.OrderId}' not found"));
+
+        const string itemsQuery = """
+            SELECT 
+                i."Id",
+                i."ProductId",
+                i."ProductVariantId",
+                i."OriginalPrice",
+                i."SalePrice",
+                i."Quantity",
+                i."ProductName",
+                i."ImageUrl",
+                i."AttributesDescription"
+            FROM "ordering"."OrderItems" i
+            WHERE i."OrderId" = @OrderId
+            """
+        ;
+
+        var items = await dbConnection.QueryAsync<OrderItemReadModel>(itemsQuery, new { OrderId = query.OrderId });
+        order.Items = items.ToList();
+
 
         return Result.Ok(order);
     }

@@ -30,11 +30,10 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Modules\Catalog\Catalog.ApiContracts\Catalog.ApiContracts.csproj" />
-		<ProjectReference Include="..\Modules\Catalog\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
+		<ProjectReference Include="..\Modules\Catalog\Catalog.Core\Catalog.Core.csproj" />
 		<ProjectReference Include="..\Modules\Ordering\Ordering.ApiContracts\Ordering.ApiContracts.csproj" />
-		<ProjectReference Include="..\Modules\Ordering\Ordering.Infrastructure\Ordering.Infrastructure.csproj" />
+		<ProjectReference Include="..\Modules\Ordering\Ordering.Core\Ordering.Core.csproj" />
 		<ProjectReference Include="..\Modules\Pay\Pay.ApiContracts\Pay.ApiContracts.csproj" />
-		<ProjectReference Include="..\Modules\Pay\Pay.Infrastructure\Pay.Infrastructure.csproj" />
-		<ProjectReference Include="..\Modules\Reporting\Reporting.Infrastructure\Reporting.Infrastructure.csproj" />
+		<ProjectReference Include="..\Modules\Reporting\Reporting.Core\Reporting.Core.csproj" />
 	</ItemGroup>
 </Project>

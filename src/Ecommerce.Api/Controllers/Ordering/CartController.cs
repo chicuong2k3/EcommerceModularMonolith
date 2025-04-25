@@ -1,4 +1,6 @@
-﻿namespace Ecommerce.Api.Controllers.Ordering;
+﻿using Ordering.Core.Commands;
+
+namespace Ecommerce.Api.Controllers.Ordering;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -25,10 +25,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Persistence\Configurations\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\..\..\Shared\Shared.Infrastructure\Shared.Infrastructure.csproj" />
 	  <ProjectReference Include="..\Pay.Contracts\Pay.Contracts.csproj" />
 	  <ProjectReference Include="..\Pay.Core\Pay.Core.csproj" />

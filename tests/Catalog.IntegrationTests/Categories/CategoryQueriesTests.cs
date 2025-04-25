@@ -2,11 +2,11 @@ namespace Catalog.IntegrationTests.Categories;
 
 public class CategoryQueriesTests : IntegrationTestBase
 {
-    private readonly IWriteCategoryRepository categoryRepository;
+    private readonly ICategoryRepository categoryRepository;
 
     public CategoryQueriesTests(IntegrationTestWebAppFactory factory) : base(factory)
     {
-        categoryRepository = serviceScope.ServiceProvider.GetRequiredService<IWriteCategoryRepository>();
+        categoryRepository = serviceScope.ServiceProvider.GetRequiredService<ICategoryRepository>();
     }
 
     [Fact]

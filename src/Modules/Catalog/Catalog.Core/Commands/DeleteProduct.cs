@@ -8,7 +8,7 @@ namespace Catalog.Core.Commands;
 public record DeleteProduct(Guid Id) : ICommand;
 
 internal sealed class DeleteProductHandler(
-    IWriteProductRepository productRepository)
+    IProductRepository productRepository)
     : ICommandHandler<DeleteProduct>
 {
 

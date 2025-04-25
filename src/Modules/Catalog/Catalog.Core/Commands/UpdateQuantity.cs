@@ -7,7 +7,7 @@ namespace Catalog.Core.Commands;
 
 public record UpdateQuantity(Guid ProductId, Guid ProductVariantId, int NewQuantity) : ICommand;
 
-internal sealed class UpdateQuantityHandler(IWriteProductRepository productRepository)
+internal sealed class UpdateQuantityHandler(IProductRepository productRepository)
     : ICommandHandler<UpdateQuantity>
 {
     public async Task<Result> Handle(UpdateQuantity command, CancellationToken cancellationToken)

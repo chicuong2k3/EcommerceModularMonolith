@@ -14,8 +14,8 @@ public sealed record CreateProduct(
 
 
 internal sealed class CreateProductHandler(
-    IWriteProductRepository productRepository,
-    IWriteCategoryRepository categoryRepository)
+    IProductRepository productRepository,
+    ICategoryRepository categoryRepository)
     : ICommandHandler<CreateProduct, Product>
 {
     public async Task<Result<Product>> Handle(CreateProduct command, CancellationToken cancellationToken)

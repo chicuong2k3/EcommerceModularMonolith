@@ -1,9 +1,4 @@
-﻿using Catalog.ApiContracts.Requests;
-using Catalog.Core.Commands;
-using Catalog.Core.Queries;
-using Catalog.Core.ValueObjects;
-using FluentResults.Extensions.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
+﻿using Catalog.Core.ValueObjects;
 
 namespace Ecommerce.Api.Controllers.Catalog;
 

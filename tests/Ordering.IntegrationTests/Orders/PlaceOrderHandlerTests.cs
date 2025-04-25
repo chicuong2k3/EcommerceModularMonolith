@@ -1,8 +1,10 @@
+using Ordering.Core.Persistence;
+
 namespace Ordering.IntegrationTests.Orders;
 
 public class PlaceOrderHandlerTests : IntegrationTestBase
 {
-    private readonly IWriteOrderRepository orderRepository;
+    private readonly IOrderRepository orderRepository;
     private readonly ICartRepository cartRepository;
     private readonly Mock<IProductService> productServiceMock;
     private readonly OrderingDbContext dbContext;
@@ -25,7 +27,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
         });
 
         // Get services from the updated scope
-        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IWriteOrderRepository>();
+        orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
         cartRepository = serviceScope.ServiceProvider.GetRequiredService<ICartRepository>();
         dbContext = serviceScope.ServiceProvider.GetRequiredService<OrderingDbContext>();
 
