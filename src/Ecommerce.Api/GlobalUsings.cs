@@ -4,7 +4,6 @@ global using FluentResults.Extensions.AspNetCore;
 global using Microsoft.AspNetCore.Mvc;
 global using Shared.Abstractions.Core;
 
-global using Catalog.ApiContracts.Requests;
 global using Catalog.Core.Commands;
 global using Catalog.Core.Queries;
 

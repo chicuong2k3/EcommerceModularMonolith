@@ -90,8 +90,8 @@ public class DeleteCategoryTests : IntegrationTestBase
         var subCategory1 = Category.Create(Guid.NewGuid(), faker.Commerce.Categories(1)[0]).Value;
         var subCategory2 = Category.Create(Guid.NewGuid(), faker.Commerce.Categories(1)[0]).Value;
 
-        parentCategory.AddSubCategory(subCategory1);
-        parentCategory.AddSubCategory(subCategory2);
+        await parentCategory.AddSubCategoryAsync(subCategory1, categoryRepository);
+        await parentCategory.AddSubCategoryAsync(subCategory2, categoryRepository);
 
         await categoryRepository.AddAsync(parentCategory);
 

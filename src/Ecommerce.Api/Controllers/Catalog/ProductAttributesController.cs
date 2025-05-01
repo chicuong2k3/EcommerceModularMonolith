@@ -1,4 +1,6 @@
-﻿namespace Ecommerce.Api.Controllers.Catalog;
+﻿using Catalog.Requests;
+
+namespace Ecommerce.Api.Controllers.Catalog;
 
 [ApiController]
 [Route("api/product-attributes")]

@@ -1,6 +1,6 @@
 ﻿using Bogus;
+using Catalog.Core.Persistence;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Catalog.IntegrationTests.Abstractions;
 
@@ -15,10 +15,14 @@ public class IntegrationTestBase : IDisposable
     {
         serviceScope = factory.Services.CreateScope();
         mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var db = serviceScope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        db.Database.EnsureCreated();
     }
 
     public void Dispose()
     {
+        var db = serviceScope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        db.Database.EnsureDeleted();
         serviceScope.Dispose();
     }
 }

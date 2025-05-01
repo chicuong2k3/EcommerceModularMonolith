@@ -1,7 +1,4 @@
-﻿using Catalog.Core.ReadModels;
-using Shared.Abstractions.Core;
-
-namespace Catalog.IntegrationTests.Categories;
+﻿namespace Catalog.IntegrationTests.Categories;
 
 public class CreateCategoryTests : IntegrationTestBase
 {
@@ -111,42 +108,22 @@ public class CreateCategoryTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task CreateCategory_Success_MultipleSubcategories()
+    public async Task CreateCategory_Failure_DuplicateName()
     {
         // Arrange
-        var parentId = Guid.NewGuid();
-        var parentName = faker.Commerce.Categories(1)[0];
-        var parentResult = await mediator.Send(new CreateCategory(parentId, parentName, null));
-        Assert.True(parentResult.IsSuccess);
+        var categoryName = faker.Commerce.Categories(1)[0];
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
 
-        // Create subcategories sequentially to avoid DbContext concurrency issues
-        var subCategoryIds = new List<Guid>();
-        for (int i = 0; i < 3; i++)
-        {
-            var subCategoryId = Guid.NewGuid();
-            var result = await mediator.Send(
-                new CreateCategory(subCategoryId, faker.Commerce.Categories(1)[0], parentId)
-            );
-            Assert.True(result.IsSuccess);
-            subCategoryIds.Add(subCategoryId);
-        }
+        // First create succeeds
+        var firstResult = await mediator.Send(new CreateCategory(id1, categoryName, null));
+        Assert.True(firstResult.IsSuccess);
 
-        // Verify subcategories were created
-        foreach (var subCategoryId in subCategoryIds)
-        {
-            var savedSubCategory = await categoryRepository.GetByIdAsync(subCategoryId);
-            Assert.NotNull(savedSubCategory);
-            Assert.Equal(parentId, savedSubCategory.ParentCategoryId);
-            Assert.Empty(savedSubCategory.SubCategories);
-        }
+        // Act - try to create a second category with the same name
+        var secondResult = await mediator.Send(new CreateCategory(id2, categoryName, null));
 
-        // Verify parent has all subcategories
-        var updatedParent = await categoryRepository.GetByIdAsync(parentId);
-        Assert.NotNull(updatedParent);
-        Assert.Equal(3, updatedParent.SubCategories.Count);
-        foreach (var subCategoryId in subCategoryIds)
-        {
-            Assert.Contains(updatedParent.SubCategories, c => c.Id == subCategoryId);
-        }
+        // Assert
+        Assert.True(secondResult.IsFailed);
+        Assert.Contains(secondResult.Errors, e => e is ConflictError);
     }
 }

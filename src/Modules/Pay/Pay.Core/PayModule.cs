@@ -33,6 +33,7 @@ public static class PayModule
 
     public static IApplicationBuilder UsePayModule(this IApplicationBuilder app)
     {
+        app.ApplicationServices.MigratePayDatabaseAsync().Wait();
         return app;
     }
 }

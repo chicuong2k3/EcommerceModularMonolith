@@ -25,12 +25,12 @@ services:
   rabbitmq:
     image: rabbitmq:management
 
-  
+
   ecommerce.api:
     image: ${DOCKER_REGISTRY-}ecommerceapi
     build:
       context: .
-      dockerfile: Ecommerce.Api/Dockerfile
+      dockerfile: src/Ecommerce.Api/Dockerfile
 
 volumes:
   portainer_data:
@@ -38,6 +38,7 @@ volumes:
   database_data:
   pgadmin_data:
   mongodb_data:
+
 
 
 

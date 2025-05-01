@@ -15,6 +15,10 @@ internal sealed class CreateCategoryHandler(
 {
     public async Task<Result> Handle(CreateCategory command, CancellationToken cancellationToken)
     {
+        var duplicate = await categoryRepository.IsDuplicatedNameAsync(command.Name, cancellationToken);
+        if (duplicate)
+            return Result.Fail(new ConflictError($"Category with name '{command.Name}' already exists."));
+
         var result = Category.Create(command.Id, command.Name);
         if (result.IsFailed)
         {
@@ -30,7 +34,9 @@ internal sealed class CreateCategoryHandler(
             if (parentCategory == null)
                 return Result.Fail(new NotFoundError($"Category with id '{command.ParentCategoryId.Value}' not found"));
 
-            parentCategory.AddSubCategory(category);
+            var addSubCatResult = await parentCategory.AddSubCategoryAsync(category, categoryRepository);
+            if (addSubCatResult.IsFailed)
+                return Result.Fail(addSubCatResult.Errors);
         }
 
         await categoryRepository.AddAsync(category, cancellationToken);

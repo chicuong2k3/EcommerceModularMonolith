@@ -7,6 +7,7 @@
 		<UserSecretsId>c6f9aefc-6494-473a-be93-41e5c6c964a8</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+		<DockerfileContext>..\..</DockerfileContext>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -30,8 +31,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Modules\Catalog\Catalog.ApiContracts\Catalog.ApiContracts.csproj" />
 		<ProjectReference Include="..\Modules\Catalog\Catalog.Core\Catalog.Core.csproj" />
+		<ProjectReference Include="..\Modules\Catalog\Catalog.Requests\Catalog.Requests.csproj" />
 		<ProjectReference Include="..\Modules\Ordering\Ordering.ApiContracts\Ordering.ApiContracts.csproj" />
 		<ProjectReference Include="..\Modules\Ordering\Ordering.Core\Ordering.Core.csproj" />
 		<ProjectReference Include="..\Modules\Pay\Pay.ApiContracts\Pay.ApiContracts.csproj" />

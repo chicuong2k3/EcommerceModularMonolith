@@ -22,13 +22,19 @@ internal sealed class UpdateCategoryHandler(
         if (category == null)
             return Result.Fail(new NotFoundError($"The category with id '{command.Id}' not found"));
 
+        var existingCategory = await categoryRepository.GetByNameAsync(command.Name, cancellationToken);
+        if (existingCategory != null && existingCategory.Id != command.Id)
+            return Result.Fail(new ConflictError($"Category with name '{command.Name}' already exists."));
+
         if (command.ParentCategoryId != null)
         {
             var parentCategory = await categoryRepository.GetByIdAsync(command.ParentCategoryId.Value, cancellationToken);
             if (parentCategory == null)
                 return Result.Fail(new NotFoundError($"The category with id '{command.ParentCategoryId.Value}' not found"));
 
-            parentCategory.AddSubCategory(category);
+            var addSubCatResult = await parentCategory.AddSubCategoryAsync(category, categoryRepository);
+            if (addSubCatResult.IsFailed)
+                return Result.Fail(addSubCatResult.Errors);
         }
 
         var result = category.ChangeName(command.Name);

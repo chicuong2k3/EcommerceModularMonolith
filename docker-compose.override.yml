@@ -33,8 +33,8 @@ services:
     container_name: pgAdmin4
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_DEFAULT_EMAIL: admin@123.com
+      PGADMIN_DEFAULT_PASSWORD: admin1234
     ports:
       - "15433:80"
     volumes:

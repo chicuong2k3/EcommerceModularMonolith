@@ -1,4 +1,5 @@
-﻿using FluentResults;
+﻿using Catalog.Core.Repositories;
+using FluentResults;
 using Shared.Abstractions.Core;
 
 namespace Catalog.Core.Entities;
@@ -48,8 +49,27 @@ public sealed class Category : AggregateRoot
         return Result.Ok();
     }
 
-    public void AddSubCategory(Category subCategory)
+    public async Task<Result> AddSubCategoryAsync(Category subCategory, ICategoryRepository categoryRepository)
     {
+        var isCircular = await IsCircularAsync(subCategory.Id, categoryRepository);
+        if (isCircular)
+            return Result.Fail(new ValidationError("Circular reference detected."));
+
         subCategories.Add(subCategory);
+        return Result.Ok();
     }
+
+    private async Task<bool> IsCircularAsync(Guid childId, ICategoryRepository categoryRepository)
+    {
+        Category? current = this;
+        while (current != null && current.ParentCategoryId != null)
+        {
+            if (current.ParentCategoryId == childId)
+                return true;
+
+            current = await categoryRepository.GetByIdAsync(current.ParentCategoryId.Value);
+        }
+        return false;
+    }
+
 }

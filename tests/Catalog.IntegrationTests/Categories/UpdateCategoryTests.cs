@@ -1,3 +1,5 @@
+using FluentResults;
+
 namespace Catalog.IntegrationTests.Categories;
 
 public class UpdateCategoryTests : IntegrationTestBase
@@ -147,6 +149,65 @@ public class UpdateCategoryTests : IntegrationTestBase
             categoryId,
             "",
             null);
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.Contains(result.Errors, error => error is ValidationError);
+    }
+
+    [Fact]
+    public async Task UpdateCategory_Failure_DuplicateName()
+    {
+        // Arrange
+        var name1 = faker.Commerce.Categories(1)[0];
+        var name2 = faker.Commerce.Categories(1)[0];
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+
+        var result1 = await mediator.Send(new CreateCategory(id1, name1, null));
+        var result2 = await mediator.Send(new CreateCategory(id2, name2, null));
+
+        Assert.True(result1.IsSuccess);
+        Assert.True(result2.IsSuccess);
+
+        // Act - attempt to update the second category to have the same name as the first
+        var updateCommand = new UpdateCategory(id2, name1, null);
+        var updateResult = await mediator.Send(updateCommand);
+
+        // Assert
+        Assert.True(updateResult.IsFailed);
+        Assert.Contains(updateResult.Errors, e => e is ConflictError);
+    }
+
+
+    [Fact]
+    public async Task UpdateCategory_Failure_CircularReference()
+    {
+        // Arrange
+        var categoryAId = Guid.NewGuid();
+        var categoryBId = Guid.NewGuid();
+        var categoryCId = Guid.NewGuid();
+
+        var nameA = faker.Commerce.Categories(1)[0];
+        var nameB = faker.Commerce.Categories(1)[0];
+        var nameC = faker.Commerce.Categories(1)[0];
+
+        // Create A (no parent), B (parent = A), C (parent = B)
+        var aResult = await mediator.Send(new CreateCategory(categoryAId, nameA, null));
+        Assert.True(aResult.IsSuccess);
+        var bResult = await mediator.Send(new CreateCategory(categoryBId, nameB, categoryAId));
+        Assert.True(bResult.IsSuccess);
+        var cResult = await mediator.Send(new CreateCategory(categoryCId, nameC, categoryBId));
+        Assert.True(cResult.IsSuccess);
+
+        // Try to make A's parent = C (should cause circular ref)
+        var command = new UpdateCategory(
+            categoryAId,
+            nameA,
+            categoryCId);
 
         // Act
         var result = await mediator.Send(command);

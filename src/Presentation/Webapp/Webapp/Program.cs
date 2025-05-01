@@ -1,34 +1,32 @@
-using Webapp.Components;
-using Webapp.Client;
+﻿using Blazorise.Icons.FontAwesome;
+using Blazorise.Tailwind;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Webapp;
+using Webapp.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
-
-builder.Services.RegisterCommonServices();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+builder.Services.AddScoped<ResponseHandler>();
+builder.Services.AddHttpClient<CategoryService>((sp, client) =>
 {
-    app.UseWebAssemblyDebugging();
-}
-else
+    client.BaseAddress = new Uri("https://localhost:7210");
+})
+.AddHttpMessageHandler<ResponseHandler>();
+
+AddBlazorise(builder.Services);
+
+await builder.Build().RunAsync();
+
+
+void AddBlazorise(IServiceCollection services)
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    services
+        .AddBlazorise();
+    services
+        .AddTailwindProviders()
+        .AddFontAwesomeIcons();
+
 }
-
-app.UseHttpsRedirection();
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Webapp.Client._Imports).Assembly);
-
-app.Run();

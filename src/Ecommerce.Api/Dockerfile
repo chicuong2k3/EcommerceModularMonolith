@@ -12,28 +12,22 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Ecommerce.Api/Ecommerce.Api.csproj", "Ecommerce.Api/"]
-COPY ["Billing/Billing.ApiContracts/Billing.ApiContracts.csproj", "Billing/Billing.ApiContracts/"]
-COPY ["Billing/Billing.Infrastructure/Billing.Infrastructure.csproj", "Billing/Billing.Infrastructure/"]
-COPY ["Common/Common.Infrastructure/Common.Infrastructure/Common.Infrastructure.csproj", "Common/Common.Infrastructure/Common.Infrastructure/"]
-COPY ["Common/Common.Application/Common.Application.csproj", "Common/Common.Application/"]
-COPY ["Common/Common.Domain/Common.Domain.csproj", "Common/Common.Domain/"]
-COPY ["Billing/Billing.Application/Billing.Application.csproj", "Billing/Billing.Application/"]
-COPY ["Ordering/Ordering.Contracts/Ordering.Contracts.csproj", "Ordering/Ordering.Contracts/"]
-COPY ["Billing/Billing.Domain/Billing.Domain.csproj", "Billing/Billing.Domain/"]
-COPY ["Catalog/Catalog.ApiContracts/Catalog.ApiContracts.csproj", "Catalog/Catalog.ApiContracts/"]
-COPY ["Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj", "Catalog/Catalog.Infrastructure/"]
-COPY ["Catalog/Catalog.Application/Catalog.Application.csproj", "Catalog/Catalog.Application/"]
-COPY ["Catalog/Catalog.Contracts/Catalog.Contracts.csproj", "Catalog/Catalog.Contracts/"]
-COPY ["Catalog/Catalog.Domain/Catalog.Domain.csproj", "Catalog/Catalog.Domain/"]
-COPY ["Ordering/Ordering.ApiContracts/Ordering.ApiContracts.csproj", "Ordering/Ordering.ApiContracts/"]
-COPY ["Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj", "Ordering/Ordering.Infrastructure/"]
-COPY ["Ordering/Ordering.Application/Ordering.Application.csproj", "Ordering/Ordering.Application/"]
-COPY ["Billing/Billing.Contracts/Billing.Contracts.csproj", "Billing/Billing.Contracts/"]
-COPY ["Ordering/Ordering.Domain/Ordering.Domain.csproj", "Ordering/Ordering.Domain/"]
-RUN dotnet restore "./Ecommerce.Api/Ecommerce.Api.csproj"
+COPY ["src/Ecommerce.Api/Ecommerce.Api.csproj", "src/Ecommerce.Api/"]
+COPY ["src/Modules/Catalog/Catalog.ApiContracts/Catalog.ApiContracts.csproj", "src/Modules/Catalog/Catalog.ApiContracts/"]
+COPY ["src/Modules/Catalog/Catalog.Core/Catalog.Core.csproj", "src/Modules/Catalog/Catalog.Core/"]
+COPY ["src/Shared/Shared.Abstractions/Shared.Abstractions.csproj", "src/Shared/Shared.Abstractions/"]
+COPY ["src/Shared/Shared.Infrastructure/Shared.Infrastructure.csproj", "src/Shared/Shared.Infrastructure/"]
+COPY ["src/Modules/Ordering/Ordering.Contracts/Ordering.Contracts.csproj", "src/Modules/Ordering/Ordering.Contracts/"]
+COPY ["src/Modules/Catalog/Catalog.Contracts/Catalog.Contracts.csproj", "src/Modules/Catalog/Catalog.Contracts/"]
+COPY ["src/Modules/Ordering/Ordering.ApiContracts/Ordering.ApiContracts.csproj", "src/Modules/Ordering/Ordering.ApiContracts/"]
+COPY ["src/Modules/Ordering/Ordering.Core/Ordering.Core.csproj", "src/Modules/Ordering/Ordering.Core/"]
+COPY ["src/Modules/Pay/Pay.Contracts/Pay.Contracts.csproj", "src/Modules/Pay/Pay.Contracts/"]
+COPY ["src/Modules/Pay/Pay.ApiContracts/Pay.ApiContracts.csproj", "src/Modules/Pay/Pay.ApiContracts/"]
+COPY ["src/Modules/Pay/Pay.Core/Pay.Core.csproj", "src/Modules/Pay/Pay.Core/"]
+COPY ["src/Modules/Reporting/Reporting.Core/Reporting.Core.csproj", "src/Modules/Reporting/Reporting.Core/"]
+RUN dotnet restore "./src/Ecommerce.Api/Ecommerce.Api.csproj"
 COPY . .
-WORKDIR "/src/Ecommerce.Api"
+WORKDIR "/src/src/Ecommerce.Api"
 RUN dotnet build "./Ecommerce.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

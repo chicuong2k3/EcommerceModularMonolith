@@ -1,4 +1,6 @@
-﻿namespace Ecommerce.Api.Controllers.Catalog;
+﻿using Catalog.Requests;
+
+namespace Ecommerce.Api.Controllers.Catalog;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +28,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
+    public async Task<IActionResult> CreateCategory([FromBody] CreateUpdateCategoryRequest request)
     {
         var id = Guid.NewGuid();
         var result = await mediator.Send(new CreateCategory(id, request.Name, request.ParentCategoryId));
@@ -39,11 +41,14 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
+    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CreateUpdateCategoryRequest request)
     {
-        var command = new UpdateCategory(id, request.NewName, request.ParentCategoryId);
+        var command = new UpdateCategory(id, request.Name, request.ParentCategoryId);
         var result = await mediator.Send(command);
-        return result.ToActionResult();
+        if (result.IsFailed)
+            return result.ToActionResult();
+        var getResult = await mediator.Send(new GetCategoryById(id));
+        return Ok(getResult);
     }
 
     [HttpDelete("{id}")]

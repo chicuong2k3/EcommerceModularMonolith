@@ -1,4 +1,5 @@
 ﻿using Catalog.Core.ValueObjects;
+using Catalog.Requests;
 
 namespace Ecommerce.Api.Controllers.Catalog;
 

@@ -1,5 +1,5 @@
-﻿using Catalog.Core.ReadModels;
-using Catalog.Core.Repositories;
+﻿using Catalog.Core.Repositories;
+using Catalog.ReadModels;
 using FluentResults;
 using Shared.Abstractions.Application;
 

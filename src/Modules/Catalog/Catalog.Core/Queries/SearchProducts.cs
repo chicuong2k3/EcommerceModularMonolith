@@ -1,6 +1,6 @@
-﻿using Catalog.Core.ReadModels;
-using Catalog.Core.Repositories;
+﻿using Catalog.Core.Repositories;
 using Catalog.Core.ValueObjects;
+using Catalog.ReadModels;
 using Dapper;
 using FluentResults;
 using Shared.Abstractions.Application;

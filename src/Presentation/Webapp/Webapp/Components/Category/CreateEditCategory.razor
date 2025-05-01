@@ -1,0 +1,53 @@
+﻿
+<Modal Visible="@Visible" VisibleChanged="@VisibleChanged">
+    <ModalContent Size="ModalSize.Large">
+        <ModalHeader>
+            <ModalTitle>@(IsEditMode ? "Chỉnh sửa danh mục" : "Thêm danh mục")</ModalTitle>
+            <CloseButton Clicked="@(() => Visible = false)" />
+        </ModalHeader>
+        <ModalBody>
+            <Validations Mode="ValidationMode.Auto" ValidateOnLoad="false" Model="Category">
+                <Validation>
+                    <Field>
+                        <FieldLabel RequiredIndicator>Tên danh mục</FieldLabel>
+                        <TextEdit @bind-Text="Category.Name" Placeholder="Điền tên danh mục">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Danh mục cha</FieldLabel>
+                        <Select @bind-SelectedValue="@Category.ParentCategoryId" Loading="@(Categories.Count() == 0)">
+                            <ChildContent>
+                                @foreach (var category in Categories)
+                                {
+                                    <SelectItem Value="@category.Id">@category.Name</SelectItem>
+                                }
+                            </ChildContent>
+                        </Select>
+                    </Field>
+                </Validation>
+            </Validations>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
+            <Button Color="Color.Primary" Clicked="OnSubmit">Lưu thay đổi</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; } = false;
+    [Parameter]
+    public bool IsEditMode { get; set; } = false;
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+    [Parameter]
+    public List<CategoryReadModel> Categories { get; set; }
+    [Parameter]
+    public CreateUpdateCategoryRequest Category { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+}

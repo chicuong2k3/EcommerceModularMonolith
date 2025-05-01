@@ -1,0 +1,13 @@
+---
+description: Enforce WindSuft component usage
+globs: ["src/**/*.{razor,html}"]
+alwaysApply: true
+---
+
+- Always use components from the WindSuft design system.
+- Do not recreate UI elements already available in the system.
+- Follow documentation in the referenced files below.
+- Ensure proper props and structure match the examples provided.
+
+
+@docs:shadcn-ui-docs

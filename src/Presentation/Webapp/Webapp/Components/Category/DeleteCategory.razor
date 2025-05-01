@@ -1,0 +1,31 @@
+﻿
+<Modal Visible="@Visible" VisibleChanged="@VisibleChanged">
+    <ModalContent Size="ModalSize.Large">
+        <ModalHeader>
+            <ModalTitle>Xoá danh mục</ModalTitle>
+            <CloseButton Clicked="@(() => Visible = false)" />
+        </ModalHeader>
+        <ModalBody>
+            @if (Category != null)
+            {
+                <Text>Bạn có chắc chắn muốn xoá danh mục '@Category.Name' không?</Text>
+                <Text>Danh mục này sẽ bị xóa vĩnh viễn và không thể khôi phục lại.</Text>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
+            <Button Color="Color.Primary" Clicked="OnSubmit">Xác nhận</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; } = false;
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+    [Parameter]
+    public CategoryReadModel Category { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+}

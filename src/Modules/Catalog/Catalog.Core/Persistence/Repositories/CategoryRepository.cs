@@ -36,6 +36,18 @@ internal sealed class CategoryRepository : ICategoryRepository
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
+    public Task<Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Categories
+            .FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
+
+    public async Task<bool> IsDuplicatedNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Categories
+            .AnyAsync(c => c.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
+
     public async Task RemoveAsync(Category category, CancellationToken cancellationToken = default)
     {
         dbContext.Categories.Remove(category);
