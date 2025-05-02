@@ -1,0 +1,40 @@
+﻿
+<Modal Visible="@Visible" VisibleChanged="@VisibleChanged">
+    <ModalContent Size="ModalSize.Large">
+        <ModalHeader>
+            <ModalTitle>@(IsEditMode ? "Chỉnh sửa thuộc tính sản phẩm" : "Thêm thuộc tính sản phẩm")</ModalTitle>
+            <CloseButton Clicked="@(() => Visible = false)" />
+        </ModalHeader>
+        <ModalBody>
+            <Validations Mode="ValidationMode.Auto" ValidateOnLoad="false" Model="ProductAttribute">
+                <Validation>
+                    <Field>
+                        <FieldLabel RequiredIndicator>Tên thuộc tính sản phẩm</FieldLabel>
+                        <TextEdit @bind-Text="ProductAttribute.Name" Placeholder="Điền tên thuộc tính sản phẩm">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                </Validation>
+            </Validations>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
+            <Button Color="Color.Primary" Clicked="OnSubmit">Lưu thay đổi</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; } = false;
+    [Parameter]
+    public bool IsEditMode { get; set; } = false;
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+    [Parameter]
+    public CreateUpdateProductAttributeRequest ProductAttribute { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+}

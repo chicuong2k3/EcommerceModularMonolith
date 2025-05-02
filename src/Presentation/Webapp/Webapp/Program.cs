@@ -15,6 +15,11 @@ builder.Services.AddHttpClient<CategoryService>((sp, client) =>
     client.BaseAddress = new Uri("https://localhost:7210");
 })
 .AddHttpMessageHandler<ResponseHandler>();
+builder.Services.AddHttpClient<ProductAttributeService>((sp, client) =>
+{
+    client.BaseAddress = new Uri("https://localhost:7210");
+})
+.AddHttpMessageHandler<ResponseHandler>();
 
 AddBlazorise(builder.Services);
 

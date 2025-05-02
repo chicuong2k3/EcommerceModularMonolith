@@ -26,4 +26,12 @@ public class ProductAttribute : AggregateRoot
 
         return Result.Ok(new ProductAttribute(id, name));
     }
+
+    public Result UpdateName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return Result.Fail(new ValidationError("Attribute name is required."));
+        Name = name.ToLower();
+        return Result.Ok();
+    }
 }

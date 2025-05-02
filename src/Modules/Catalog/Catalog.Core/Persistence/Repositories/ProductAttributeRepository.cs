@@ -1,5 +1,4 @@
 ﻿using Catalog.Core.Entities;
-using Catalog.Core.Persistence;
 using Catalog.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,5 +40,16 @@ internal class ProductAttributeRepository : IProductAttributeRepository
     {
         var attributes = await dbContext.ProductAttributes.Where(a => ids.Contains(a.Id)).ToListAsync();
         return attributes;
+    }
+
+    public async Task<ProductAttribute?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var attribute = await dbContext.ProductAttributes.FirstOrDefaultAsync(x => x.Id == id);
+        return attribute;
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

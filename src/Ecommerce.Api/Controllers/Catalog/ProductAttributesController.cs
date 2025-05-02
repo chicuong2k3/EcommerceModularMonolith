@@ -28,7 +28,7 @@ public class ProductAttributesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProductAttribute([FromBody] CreateProductAttributeRequest request)
+    public async Task<IActionResult> CreateProductAttribute([FromBody] CreateUpdateProductAttributeRequest request)
     {
         var result = await mediator.Send(new CreateAttribute(Guid.NewGuid(), request.Name));
         if (result.IsFailed)
@@ -38,10 +38,21 @@ public class ProductAttributesController : ControllerBase
         return CreatedAtAction(nameof(GetProductAttribute), new { name = request.Name }, getResult.ValueOrDefault);
     }
 
-    [HttpDelete("{name}")]
-    public async Task<IActionResult> DeleteProductAttribute(string name)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> CreateProductAttribute(Guid id, [FromBody] CreateUpdateProductAttributeRequest request)
     {
-        var result = await mediator.Send(new DeleteAttribute(name));
+        var result = await mediator.Send(new UpdateAttribute(id, request.Name));
+        if (result.IsFailed)
+            return result.ToActionResult();
+
+        var getResult = await mediator.Send(new GetAttributeByName(request.Name));
+        return Ok(getResult.ValueOrDefault);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProductAttribute(Guid id)
+    {
+        var result = await mediator.Send(new DeleteAttribute(id));
         return result.ToActionResult();
     }
 }

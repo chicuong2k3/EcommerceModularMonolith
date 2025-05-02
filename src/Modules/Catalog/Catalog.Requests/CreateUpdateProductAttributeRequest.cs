@@ -1,6 +1,6 @@
 ﻿namespace Catalog.Requests;
 
-public class CreateProductAttributeRequest
+public class CreateUpdateProductAttributeRequest
 {
     public string Name { get; set; }
 }

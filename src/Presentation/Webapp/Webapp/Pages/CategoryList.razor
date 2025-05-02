@@ -26,19 +26,30 @@
             <TableHeaderCell>Hành động</TableHeaderCell>
         </TableHeader>
         <TableBody>
-            @foreach (var category in CurrentPageCategories)
+            @if (CurrentPageCategories.Any())
             {
-                <TableRow @key="category.Id">
-                    <TableRowCell>@(categoryHierarchyCache.TryGetValue(category.Id, out var hierarchy) ? hierarchy : "")</TableRowCell>
-                    <TableRowCell>
-                        <div class="d-flex gap-2">
-                            <Button Color="Color.Info" Clicked="@(() => ShowEditModal(category))" Size="Size.Small">
-                                <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.PenNib" />
-                            </Button>
-                            <Button Color="Color.Danger" Clicked="@(() => ShowDeleteModal(category))" Size="Size.Small">
-                                <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.Trash" />
-                            </Button>
-                        </div>
+                @foreach (var category in CurrentPageCategories)
+                {
+                    <TableRow @key="category.Id">
+                        <TableRowCell>@(categoryHierarchyCache.TryGetValue(category.Id, out var hierarchy) ? hierarchy : "")</TableRowCell>
+                        <TableRowCell>
+                            <div class="d-flex gap-2">
+                                <Button Color="Color.Info" Clicked="@(() => ShowEditModal(category))" Size="Size.Small">
+                                    <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.PenNib" />
+                                </Button>
+                                <Button Color="Color.Danger" Clicked="@(() => ShowDeleteModal(category))" Size="Size.Small">
+                                    <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.Trash" />
+                                </Button>
+                            </div>
+                        </TableRowCell>
+                    </TableRow>
+                }
+            }
+            else
+            {
+                <TableRow>
+                    <TableRowCell Class="text-center" ColumnSpan="2">
+                        <Text TextSize="TextSize.Large" TextWeight="TextWeight.Bold">Chưa có danh mục nào</Text>
                     </TableRowCell>
                 </TableRow>
             }
@@ -63,7 +74,7 @@
                         </PaginationItem>
                     }
                 }
-                <PaginationItem Disabled="totalPages == currentPage" @onclick="Next">
+                <PaginationItem Disabled="@(totalPages == currentPage || totalPages == 0)" @onclick="Next">
                     <PaginationLink>
                         <span aria-hidden="true">
                             <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.Forward" />

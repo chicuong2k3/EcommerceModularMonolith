@@ -19,7 +19,7 @@ public class DeleteAttributeTests : IntegrationTestBase
         var attributeName = "test-attribute";
         await mediator.Send(new CreateAttribute(attributeId, attributeName));
 
-        var command = new DeleteAttribute(attributeName);
+        var command = new DeleteAttribute(attributeId);
 
         // Act
         var result = await mediator.Send(command);
@@ -36,21 +36,7 @@ public class DeleteAttributeTests : IntegrationTestBase
     public async Task DeleteAttribute_Failure_AttributeNotFound()
     {
         // Arrange
-        var command = new DeleteAttribute("non-existent-attribute");
-
-        // Act
-        var result = await mediator.Send(command);
-
-        // Assert
-        Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, error => error is NotFoundError);
-    }
-
-    [Fact]
-    public async Task DeleteAttribute_Failure_EmptyName()
-    {
-        // Arrange
-        var command = new DeleteAttribute("");
+        var command = new DeleteAttribute(Guid.NewGuid());
 
         // Act
         var result = await mediator.Send(command);

@@ -1,0 +1,31 @@
+﻿
+<Modal Visible="@Visible" VisibleChanged="@VisibleChanged">
+    <ModalContent Size="ModalSize.Large">
+        <ModalHeader>
+            <ModalTitle>Xoá thuộc tính sản phẩm</ModalTitle>
+            <CloseButton Clicked="@(() => Visible = false)" />
+        </ModalHeader>
+        <ModalBody>
+            @if (ProductAttribute != null)
+            {
+                <Text>Bạn có chắc chắn muốn xoá thuộc tính '@ProductAttribute.Name' không?</Text>
+                <Text>Thuộc tính này sẽ bị xóa vĩnh viễn và không thể khôi phục lại.</Text>
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
+            <Button Color="Color.Primary" Clicked="OnSubmit">Xác nhận</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; } = false;
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+    [Parameter]
+    public AttributeReadModel ProductAttribute { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+}
