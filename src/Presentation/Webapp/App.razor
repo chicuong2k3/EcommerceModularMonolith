@@ -1,0 +1,74 @@
+﻿@using System.Reflection
+@using Blazorise
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.WebAssembly.Services
+@using Webapp.Layouts
+@inject LazyAssemblyLoader LazyAssemblyLoader
+
+<ThemeProvider Theme="@theme">
+    <Router AppAssembly="typeof(App).Assembly"
+            AdditionalAssemblies="@lazyLoadedAssemblies" OnNavigateAsync="OnNavigateAsync">
+        <Found Context="routeData">
+            <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <p>Sorry, there's nothing at this address.</p>
+        </NotFound>
+    </Router>
+
+    <MessageProvider />
+    <PageProgressProvider />
+</ThemeProvider>
+
+<ToastProvider />
+
+
+@code {
+    List<Assembly> lazyLoadedAssemblies = new();
+
+    private async Task OnNavigateAsync(NavigationContext context)
+    {
+        if (context.Path.StartsWith("admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!lazyLoadedAssemblies.Any(a => a.GetName().Name == "Webapp.Admin"))
+            {
+                var assemblies = await LazyAssemblyLoader.LoadAssembliesAsync(new[] { "Webapp.Admin.dll" });
+                lazyLoadedAssemblies.AddRange(assemblies);
+            }
+        }
+    }
+
+    private Theme theme = new()
+        {
+            BarOptions = new()
+            {
+                HorizontalHeight = "72px"
+            },
+            ColorOptions = new()
+            {
+                Primary = "#0288D1",
+                Secondary = "#A65529",
+                Success = "#23C02E",
+                Info = "#9BD8FE",
+                Warning = "#F8B86C",
+                Danger = "#F95741",
+                Light = "#F0F0F0",
+                Dark = "#535353",
+            },
+            BackgroundOptions = new()
+            {
+                Primary = "#0288D1",
+                Secondary = "#A65529",
+                Success = "#23C02E",
+                Info = "#9BD8FE",
+                Warning = "#F8B86C",
+                Danger = "#F95741",
+                Light = "#F0F0F0",
+                Dark = "#535353",
+            },
+            InputOptions = new()
+            {
+                CheckColor = "#0288D1",
+            }
+        };
+}
