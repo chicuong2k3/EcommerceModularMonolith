@@ -9,7 +9,7 @@ public class ProductVariant
     public Guid Id { get; private set; }
     public Money OriginalPrice { get; private set; }
     public int Quantity { get; private set; }
-    public Image? Image { get; }
+    public Image? Image { get; private set; }
     public Money? SalePrice { get; private set; }
     public DateTimeRange? SalePriceEffectivePeriod { get; private set; }
 
@@ -51,6 +51,9 @@ public class ProductVariant
         if (salePriceEffectivePeriod != null && salePrice == null)
             return Result.Fail(new ValidationError("Sale price is required when sale price effective period is set."));
 
+        if (salePrice != null && salePrice > price)
+            return Result.Fail(new ValidationError("Sale price must be less than the original price"));
+
         return new ProductVariant(price, quantity, image, salePrice, salePriceEffectivePeriod);
     }
 
@@ -71,6 +74,35 @@ public class ProductVariant
         }
 
         Quantity = newQuantity;
+
+        return Result.Ok();
+    }
+
+    public Result UpdateImage(Image? image)
+    {
+        if (image == null)
+            return Result.Fail(new ValidationError("Image is required."));
+        Image = image;
+        return Result.Ok();
+    }
+
+    public Result UpdatePrice(Money originalPrice, Money? salePrice, DateTimeRange? salePriceEffectivePeriod)
+    {
+        OriginalPrice = originalPrice;
+
+        if (salePrice != null && salePriceEffectivePeriod == null)
+            return Result.Fail(new ValidationError("Sale price effective period is required when sale price is set."));
+        if (salePriceEffectivePeriod != null && salePrice == null)
+            return Result.Fail(new ValidationError("Sale price is required when sale price effective period is set."));
+
+        if (salePrice != null && salePrice > OriginalPrice)
+            return Result.Fail(new ValidationError("Sale price cannot be greater than original price."));
+
+        if (salePrice != null)
+        {
+            SalePrice = salePrice;
+            SalePriceEffectivePeriod = salePriceEffectivePeriod;
+        }
 
         return Result.Ok();
     }

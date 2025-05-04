@@ -194,7 +194,7 @@ public class CancelOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 29.99m,
                     SalePrice = null,
                     Quantity = 10,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }

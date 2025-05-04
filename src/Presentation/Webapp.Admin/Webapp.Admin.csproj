@@ -1,26 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<Version>1.7</Version>
 	</PropertyGroup>
 
-
 	<ItemGroup>
-		<SupportedPlatform Include="browser" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.4" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="wwwroot\" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.*" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.*" PrivateAssets="all" />
+		<PackageReference Include="Blazorise.RichTextEdit" Version="1.7.6" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Webapp.Shared\Webapp.Shared.csproj" />
 	</ItemGroup>
-
 </Project>

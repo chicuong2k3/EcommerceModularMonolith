@@ -49,7 +49,7 @@ internal sealed class AddItemToCartHandler(
                 return Result.Fail(new Error(""));
             }
 
-            var addItemResult = await cart.AddItemAsync(
+            var addItemResult = cart.AddItem(
                 item.ProductId,
                 item.ProductVariantId,
                 item.Quantity);

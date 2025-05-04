@@ -31,7 +31,7 @@ internal class ProductService : IProductService
                 OriginalPrice = v.OriginalPrice,
                 SalePrice = v.SalePrice,
                 Quantity = v.Quantity,
-                ImageUrl = v.ImageUrl,
+                Image = v.ImageData,
                 Attributes = v.Attributes.ToDictionary(a => a.AttributeName, a => a.AttributeValue),
             }).ToList()
         };

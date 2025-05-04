@@ -69,7 +69,7 @@ internal sealed class PlaceOrderHandler(
                 item.Quantity,
                 originalPrice,
                 salePrice,
-                productVariant.ImageUrl,
+                productVariant.Image,
                 string.Join(", ", productVariant.Attributes.Select(a => $"{a.Key}: {a.Value}")));
 
             if (orderItemCreationResult.IsFailed)

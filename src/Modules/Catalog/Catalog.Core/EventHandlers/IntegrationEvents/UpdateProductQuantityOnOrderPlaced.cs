@@ -1,5 +1,4 @@
-﻿using Catalog.Core.Commands;
-using MediatR;
+﻿using Catalog.Core.Repositories;
 using Microsoft.Extensions.Logging;
 using Ordering.Contracts;
 using Shared.Abstractions.Application;
@@ -10,24 +9,26 @@ public class UpdateProductQuantityOnOrderPlaced
     : IntegrationEventHandler<OrderPlacedIntegrationEvent>
 {
     private readonly ILogger<UpdateProductQuantityOnOrderPlaced> logger;
-    private readonly IMediator mediator;
+    private readonly IProductRepository productRepository;
 
     public UpdateProductQuantityOnOrderPlaced(ILogger<UpdateProductQuantityOnOrderPlaced> logger,
-                                              IMediator mediator)
+                                              IProductRepository productRepository)
     {
         this.logger = logger;
-        this.mediator = mediator;
+        this.productRepository = productRepository;
     }
 
     public override async Task Handle(OrderPlacedIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
     {
         foreach (var item in integrationEvent.OrderItems)
         {
-            var result = await mediator.Send(new UpdateQuantity(
-                item.ProductId,
-                item.ProductVariantId,
-                item.Quantity));
-
+            var product = await productRepository.GetByIdWithVariantsAsync(item.ProductId, cancellationToken);
+            if (product == null)
+            {
+                logger.LogError("Product not found: {ProductId}", item.ProductId);
+                throw new Exception($"Product not found: {item.ProductId}");
+            }
+            var result = product.UpdateQuantity(item.ProductVariantId, item.Quantity);
             if (result.IsFailed)
             {
                 logger.LogError("Failed to update product quantity on order placed event: {Errors}", result.Errors);

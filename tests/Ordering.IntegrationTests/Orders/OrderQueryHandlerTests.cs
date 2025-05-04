@@ -163,7 +163,7 @@ public class OrderQueryHandlerTests : IntegrationTestBase
                     OriginalPrice = 29.99m,
                     SalePrice = 24.99m,
                     Quantity = 10,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -231,7 +231,7 @@ public class OrderQueryHandlerTests : IntegrationTestBase
                         OriginalPrice = 29.99m + i,
                         SalePrice = 24.99m + i,
                         Quantity = 10,
-                        ImageUrl = $"https://test-product-{i}.jpg",
+                        Image = $"https://test-product-{i}.jpg",
                         Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                     }
                 }

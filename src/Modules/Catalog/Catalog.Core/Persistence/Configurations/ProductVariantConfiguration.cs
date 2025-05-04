@@ -23,11 +23,12 @@ internal sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Pro
 
         builder.OwnsOne(pv => pv.Image, image =>
         {
-            image.Property(i => i.Url)
-                .HasMaxLength(2000);
+            image.Property(i => i.Base64Data)
+                .HasColumnName("ImageData");
 
             image.Property(i => i.AltText)
-                .HasMaxLength(100);
+                .HasMaxLength(100)
+                .HasColumnName("ImageAltText");
         });
 
         builder.OwnsOne(pv => pv.SalePrice, salePrice =>

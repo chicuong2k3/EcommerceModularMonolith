@@ -1,0 +1,162 @@
+﻿@page "/admin/create-product"
+
+@inject ProductService ProductService
+@inject CategoryService CategoryService
+@inject ProductAttributeService ProductAttributeService
+@inject IToastService ToastService
+@inject NavigationManager NavigationManager
+
+<Card>
+    <CardBody>
+        @if (productAttributes.Any())
+        {
+            @if (currentStep == 1)
+            {
+                <Validations @ref="@validations" Mode="ValidationMode.Manual" Model="productRequest">
+                    <Validation>
+                        <Field>
+                            <FieldLabel RequiredIndicator>Tên sản phẩm</FieldLabel>
+                            <TextEdit @bind-Text="@productRequest.Name">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                    <Validation>
+                        <Field>
+                            <FieldLabel>Mô tả sản phẩm</FieldLabel>
+                            <RichTextEdit @ref="@richTextEdit" Theme="RichTextEditTheme.Snow" SubmitOnEnter="false"
+                                          PlaceHolder="Mô tả sản phẩm">
+                            </RichTextEdit>
+                        </Field>
+                    </Validation>
+                    <Validation>
+                        <Field>
+                            <FieldLabel RequiredIndicator>Danh mục</FieldLabel>
+                            <Select @bind-SelectedValue="@productRequest.CategoryId" Loading="@(categories.Count() == 0)">
+                                <ChildContent>
+                                    <SelectItem TValue="Guid?" Value="@null">Chọn danh mục</SelectItem>
+                                    @foreach (var category in categories)
+                                    {
+                                        <SelectItem Value="@category.Id">@category.Name</SelectItem>
+                                    }
+                                </ChildContent>
+                            </Select>
+                        </Field>
+                    </Validation>
+                </Validations>
+
+                <Button Color="Color.Secondary" Clicked="@(() => NavigationManager.NavigateTo("/admin/products"))" Margin="Margin.Is2.FromTop">Thoát</Button>
+                <Button Color="Color.Primary" Clicked="@SaveProduct" Margin="Margin.Is2.FromTop">Lưu thông tin</Button>
+
+            }
+            else if (currentStep == 2 && savedProductId.HasValue)
+            {
+                @foreach (var variant in variants)
+                {
+                    <ProductVariantForm Variant="@variant" Attributes="@productAttributes" />
+                }
+                <Button Color="Color.Info" Clicked="AddVariantForm" Margin="Margin.Is2.FromTop">Thêm biến thể</Button>
+                <Button Color="Color.Secondary" Clicked="Cancel" Margin="Margin.Is2.FromTop">Thoát</Button>
+                <Button Color="Color.Primary" Clicked="SaveAllVariants" Margin="Margin.Is2.FromTop">Lưu thay đổi</Button>
+            }
+        }
+        else
+        {
+
+        }
+    </CardBody>
+</Card>
+
+@code {
+    private CreateProductRequest productRequest = new();
+    private List<CategoryReadModel> categories = new();
+    private int currentStep = 1;
+    private Guid? savedProductId;
+    private RichTextEdit richTextEdit;
+    private Validations validations;
+
+    private List<AddVariantRequest> variants = new() {
+        new AddVariantRequest()
+    };
+
+    private List<AttributeReadModel> productAttributes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CategoryService.GetCategoriesAsync();
+        if (response.IsSuccess)
+        {
+            categories = response.Value;
+        }
+
+        var response2 = await ProductAttributeService.GetProductAttributesAsync();
+        if (response2.IsSuccess)
+        {
+            productAttributes = response2.Value;
+        }
+    }
+
+    private async Task SaveProduct()
+    {
+        productRequest.Description = await richTextEdit.GetHtmlAsync();
+        if (await validations.ValidateAll())
+        {
+            var response = await ProductService.CreateProductAsync(productRequest);
+            if (response.IsSuccess)
+            {
+                savedProductId = response.Value.Id;
+                currentStep = 2;
+            }
+            else
+            {
+                await ToastService.Error("Tạo thất bại", options: BuildToastInstanceOptions);
+            }
+        }
+
+    }
+
+    private void AddVariantForm()
+    {
+        variants.Add(new AddVariantRequest());
+    }
+
+    private async Task SaveAllVariants()
+    {
+        if (savedProductId.HasValue)
+        {
+            foreach (var variant in variants)
+            {
+                var response = await ProductService.AddVariantAsync(savedProductId.Value, variant);
+                if (response.IsSuccess)
+                {
+                    NavigationManager.NavigateTo("/admin/products");
+                    await ToastService.Success("Thêm thành công", options: BuildToastInstanceOptions);
+                }
+                else
+                {
+                    Console.WriteLine(response.ErrorMessage);
+                    await ToastService.Error("Thêm thất bại", options: BuildToastInstanceOptions);
+                }
+            }
+        }
+    }
+
+    private async void Cancel()
+    {
+        if (savedProductId.HasValue)
+        {
+            await ProductService.DeleteProductAsync(savedProductId.Value);
+        }
+        NavigationManager.NavigateTo("/admin/products");
+    }
+
+    private void BuildToastInstanceOptions(ToastInstanceOptions toastInstanceOptions)
+    {
+        toastInstanceOptions.Animated = true;
+        toastInstanceOptions.AnimationDuration = 300;
+        toastInstanceOptions.Autohide = true;
+        toastInstanceOptions.AutohideDelay = 3000;
+    }
+}

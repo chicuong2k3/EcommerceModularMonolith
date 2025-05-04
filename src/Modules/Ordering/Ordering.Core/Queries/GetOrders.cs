@@ -130,7 +130,7 @@ internal class GetOrdersHandler(IDbConnection dbConnection)
                     i."SalePrice",
                     i."Quantity",
                     i."ProductName",
-                    i."ImageUrl",
+                    i."Image",
                     i."AttributesDescription"
                 FROM "ordering"."OrderItems" i
                 WHERE i."OrderId" = ANY(@OrderIds)

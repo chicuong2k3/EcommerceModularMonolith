@@ -18,7 +18,7 @@ namespace Catalog.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("catalog")
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -325,12 +325,13 @@ namespace Catalog.Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("AltText")
                                 .HasMaxLength(100)
-                                .HasColumnType("character varying(100)");
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("ImageAltText");
 
-                            b1.Property<string>("Url")
+                            b1.Property<string>("Base64Data")
                                 .IsRequired()
-                                .HasMaxLength(2000)
-                                .HasColumnType("character varying(2000)");
+                                .HasColumnType("text")
+                                .HasColumnName("ImageData");
 
                             b1.HasKey("ProductVariantId");
 

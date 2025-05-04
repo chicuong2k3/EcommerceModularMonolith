@@ -50,7 +50,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-image.jpg",
+                    Image = "https://test-image.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -106,7 +106,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://initial-product.jpg",
+                    Image = "https://initial-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "S" } }
                 }
             }
@@ -117,7 +117,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
 
         // Create initial cart with one item
         var initialCart = new Cart(Guid.NewGuid(), ownerId);
-        await initialCart.AddItemAsync(initialProductId, initialVariantId, initialQuantity);
+        initialCart.AddItem(initialProductId, initialVariantId, initialQuantity);
         await cartRepository.UpsertAsync(initialCart);
 
         // Set up new product
@@ -137,7 +137,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 15.0m,
                     SalePrice = 12.0m,
                     Quantity = 10,
-                    ImageUrl = "https://new-product.jpg",
+                    Image = "https://new-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Green" }, { "Size", "L" } }
                 }
             }
@@ -203,7 +203,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 10,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "XL" } }
                 }
             }
@@ -214,7 +214,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
 
         // Add initial item
         var initialCart = new Cart(Guid.NewGuid(), ownerId);
-        await initialCart.AddItemAsync(productId, variantId, initialQuantity);
+        initialCart.AddItem(productId, variantId, initialQuantity);
         await cartRepository.UpsertAsync(initialCart);
 
         // Add the same item again with additional quantity
@@ -265,7 +265,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 5.0m,
                     Quantity = 5,
-                    ImageUrl = "https://first-product.jpg",
+                    Image = "https://first-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "S" } }
                 }
             }
@@ -283,7 +283,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 15.0m,
                     SalePrice = 7.0m,
                     Quantity = 8,
-                    ImageUrl = "https://second-product.jpg",
+                    Image = "https://second-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -301,7 +301,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 20.0m,
                     SalePrice = 10.0m,
                     Quantity = 12,
-                    ImageUrl = "https://third-product.jpg",
+                    Image = "https://third-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Green" }, { "Size", "L" } }
                 }
             }
@@ -396,7 +396,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }
@@ -442,7 +442,7 @@ public class AddItemToCartHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = availableQuantity,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "M" } }
                 }
             }

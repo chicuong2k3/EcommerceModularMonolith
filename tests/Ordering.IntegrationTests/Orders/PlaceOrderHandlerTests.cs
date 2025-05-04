@@ -86,7 +86,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product-1.jpg",
+                    Image = "https://test-product-1.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -104,7 +104,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 15.0m,
                     SalePrice = 12.0m,
                     Quantity = 3,
-                    ImageUrl = "https://test-product-2.jpg",
+                    Image = "https://test-product-2.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "L" } }
                 }
             }
@@ -117,8 +117,8 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(product1Id, variant1Id, 2);
-        await cart.AddItemAsync(product2Id, variant2Id, 1);
+        cart.AddItem(product1Id, variant1Id, 2);
+        cart.AddItem(product2Id, variant2Id, 1);
         await cartRepository.UpsertAsync(cart);
 
         // Create place order command
@@ -191,7 +191,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product-1.jpg",
+                    Image = "https://test-product-1.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -209,7 +209,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 15.0m,
                     SalePrice = 12.0m,
                     Quantity = 3,
-                    ImageUrl = "https://test-product-2.jpg",
+                    Image = "https://test-product-2.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Blue" }, { "Size", "L" } }
                 }
             }
@@ -222,9 +222,11 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(product1Id, variant1Id, 2);
-        await cart.AddItemAsync(product2Id, variant2Id, 1);
+        cart.AddItem(product1Id, variant1Id, 2);
+        cart.AddItem(product2Id, variant2Id, 1);
         await cartRepository.UpsertAsync(cart);
+
+        var paymentMethod = PaymentMethod.VNPay.ToString();
 
         // Create place order command
         var command = new PlaceOrder(
@@ -236,7 +238,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
             "Test Province",
             "Test Country",
             "1234567890",
-            "BankTransfer",
+            paymentMethod,
             "Standard");
 
         // Act
@@ -264,7 +266,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
         Assert.Equal("1234567890", order.ShippingInfo.PhoneNumber);
 
         // Verify payment info
-        Assert.Equal("BankTransfer", order.PaymentInfo.PaymentMethod.ToString());
+        Assert.Equal(paymentMethod, order.PaymentInfo.PaymentMethod.ToString());
 
         // Verify cart is cleared after successful order
         var updatedCart = await cartRepository.GetAsync(customerId);
@@ -285,7 +287,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with non-existent product
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(nonExistentProductId, variantId, 1);
+        cart.AddItem(nonExistentProductId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(
@@ -328,7 +330,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 1, // Only 1 in stock
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -339,7 +341,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with quantity more than stock
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(productId, variantId, 2); // Trying to order 2
+        cart.AddItem(productId, variantId, 2); // Trying to order 2
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(
@@ -384,7 +386,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -395,7 +397,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(
@@ -440,7 +442,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -451,7 +453,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(
@@ -552,7 +554,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -563,7 +565,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(
@@ -608,7 +610,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
                     OriginalPrice = 10.0m,
                     SalePrice = 8.0m,
                     Quantity = 5,
-                    ImageUrl = "https://test-product.jpg",
+                    Image = "https://test-product.jpg",
                     Attributes = new Dictionary<string, string> { { "Color", "Red" }, { "Size", "M" } }
                 }
             }
@@ -619,7 +621,7 @@ public class PlaceOrderHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), customerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         var command = new PlaceOrder(

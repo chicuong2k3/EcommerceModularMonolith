@@ -1,5 +1,4 @@
 ﻿@page "/admin/product-attributes"
-@layout AdminLayout
 
 @inject ProductAttributeService ProductAttributeService
 @inject IToastService ToastService
@@ -190,9 +189,6 @@
                 await ToastService.Error("Tạo thất bại", options: BuildToastInstanceOptions);
             }
         }
-
-        showModal = false;
-        StateHasChanged();
     }
 
     private async Task HandleDelete()

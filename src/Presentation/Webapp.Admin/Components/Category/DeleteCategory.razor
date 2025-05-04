@@ -21,10 +21,13 @@
 
 @code {
     [Parameter]
+    [EditorRequired]
     public bool Visible { get; set; } = false;
     [Parameter]
+    [EditorRequired]
     public EventCallback OnSubmit { get; set; }
     [Parameter]
+    [EditorRequired]
     public CategoryReadModel Category { get; set; }
     [Parameter]
     public EventCallback<bool> VisibleChanged { get; set; }

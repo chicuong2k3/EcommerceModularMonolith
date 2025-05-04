@@ -6,7 +6,7 @@
             <CloseButton Clicked="@(() => Visible = false)" />
         </ModalHeader>
         <ModalBody>
-            <Validations Mode="ValidationMode.Auto" ValidateOnLoad="false" Model="Category">
+            <Validations @ref="validations" Mode="ValidationMode.Manual" Model="Category">
                 <Validation>
                     <Field>
                         <FieldLabel RequiredIndicator>Tên danh mục</FieldLabel>
@@ -20,6 +20,7 @@
                         <FieldLabel>Danh mục cha</FieldLabel>
                         <Select @bind-SelectedValue="@Category.ParentCategoryId" Loading="@(Categories.Count() == 0)">
                             <ChildContent>
+                                <SelectItem TValue="Guid?" Value="@null">Chọn danh mục</SelectItem>
                                 @foreach (var category in Categories)
                                 {
                                     <SelectItem Value="@category.Id">@category.Name</SelectItem>
@@ -32,22 +33,37 @@
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
-            <Button Color="Color.Primary" Clicked="OnSubmit">Lưu thay đổi</Button>
+            <Button Color="Color.Primary" Clicked="Submit">Lưu thay đổi</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
 @code {
     [Parameter]
+    [EditorRequired]
     public bool Visible { get; set; } = false;
     [Parameter]
+    [EditorRequired]
     public bool IsEditMode { get; set; } = false;
     [Parameter]
+    [EditorRequired]
     public EventCallback OnSubmit { get; set; }
     [Parameter]
+    [EditorRequired]
     public List<CategoryReadModel> Categories { get; set; }
     [Parameter]
+    [EditorRequired]
     public CreateUpdateCategoryRequest Category { get; set; }
     [Parameter]
     public EventCallback<bool> VisibleChanged { get; set; }
+
+    private Validations validations;
+    private async Task Submit()
+    {
+        if (await validations.ValidateAll())
+        {
+            await OnSubmit.InvokeAsync();
+            await VisibleChanged.InvokeAsync(false);
+        }
+    }
 }

@@ -1,6 +1,4 @@
-using Catalog.Core.Commands;
-using Catalog.Core.Repositories;
-using Shared.Abstractions.Core;
+using System.Text;
 
 namespace Catalog.IntegrationTests.Products;
 
@@ -211,14 +209,14 @@ public class AddVariantTests : IntegrationTestBase
         // Create variant with image
         var price = faker.Random.Decimal(10, 100);
         var quantity = faker.Random.Int(1, 100);
-        var imageUrl = "https://example.com/image.jpg";
+        var fakeImageData = Convert.ToBase64String(Encoding.UTF8.GetBytes("fake image content"));
         var imageAltText = "Product image";
 
         var command = new AddVariantForProduct(
             productId,
             price,
             quantity,
-            imageUrl,
+            fakeImageData,
             imageAltText,
             Array.Empty<AttributeValue>(),
             null,
@@ -236,12 +234,12 @@ public class AddVariantTests : IntegrationTestBase
         Assert.NotNull(product);
         Assert.Single(product.Variants);
         Assert.NotNull(product.Variants.First().Image);
-        Assert.Equal(imageUrl, product.Variants.First().Image.Url);
+        Assert.Equal(fakeImageData, product.Variants.First().Image.Base64Data);
         Assert.Equal(imageAltText, product.Variants.First().Image.AltText);
     }
 
     [Fact]
-    public async Task AddVariant_Failure_InvalidImageUrl()
+    public async Task AddVariant_Failure_InvalidBase64Image()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -249,12 +247,13 @@ public class AddVariantTests : IntegrationTestBase
         var createResult = await mediator.Send(new CreateProduct(productId, productName, null, null));
         Assert.True(createResult.IsSuccess);
 
-        // Create variant with invalid image URL
+        var invalidBase64 = "abc";
+
         var command = new AddVariantForProduct(
             productId,
             faker.Random.Decimal(10, 100),
             faker.Random.Int(1, 100),
-            "abc", // Invalid URL should cause validation error
+            invalidBase64,  // image stored as base64 string
             "Alt text",
             Array.Empty<AttributeValue>(),
             null,
@@ -266,8 +265,10 @@ public class AddVariantTests : IntegrationTestBase
 
         // Assert
         Assert.True(result.IsFailed);
-        Assert.Contains(result.Errors, error => error is ValidationError);
+        Assert.Contains(result.Errors, error =>
+            error is ValidationError ve && ve.Message.Contains("image", StringComparison.OrdinalIgnoreCase));
     }
+
 
     [Fact]
     public async Task AddVariant_Failure_InvalidSalePrice()

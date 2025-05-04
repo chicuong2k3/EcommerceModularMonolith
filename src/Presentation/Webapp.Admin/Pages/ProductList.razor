@@ -1,8 +1,8 @@
 ﻿@page "/admin/products"
-@layout AdminLayout
 
 @inject ProductService ProductService
 @inject IToastService ToastService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Product Management</PageTitle>
 
@@ -15,7 +15,7 @@
 
     <!-- Create Button -->
     <div class="mb-4">
-        <Button Color="Color.Primary">
+        <Button Color="Color.Primary" Clicked="@(() => NavigationManager.NavigateTo("/admin/create-product"))">
             <Icon Name="IconName.Add" /> Thêm sản phẩm
         </Button>
     </div>
@@ -35,7 +35,7 @@
                         <TableRowCell>@product.Name</TableRowCell>
                         <TableRowCell>
                             <div class="d-flex gap-2">
-                                <Button Color="Color.Info" Size="Size.Small">
+                                <Button Color="Color.Info" Size="Size.Small" Clicked="@(() => ShowEditModal(product))">
                                     <Icon Name="Blazorise.Icons.FontAwesome.FontAwesomeIcons.PenNib" />
                                 </Button>
                                 <Button Color="Color.Danger" Clicked="@(() => ShowDeleteModal(product))" Size="Size.Small">
@@ -92,6 +92,8 @@
     <DeleteProduct @bind-Visible="@showDeleteModel" Product="@selectedForDeleteProduct" OnSubmit="HandleDelete" />
 </div>
 
+<EditProduct @ref="@editProduct" @bind-Visible="@showEditModal" Product="EditProduct" OnSubmit="HandleEditSubmit" />
+
 @code {
     private int currentPage = 1;
     private int pageSize = 10;
@@ -101,6 +103,9 @@
     private Guid selectedProductId;
     private ProductReadModel selectedForDeleteProduct;
     private bool showDeleteModel = false;
+    private bool showEditModal = false;
+    private UpdateProductRequest EditProduct = new();
+    private EditProduct editProduct;
 
     private async Task LoadProductsAsync()
     {
@@ -143,6 +148,37 @@
         }
         showDeleteModel = false;
         StateHasChanged();
+    }
+
+    private void ShowEditModal(ProductReadModel product)
+    {
+        selectedProductId = product.Id;
+        EditProduct = new UpdateProductRequest
+            {
+                Name = product.Name,
+                Description = product.Description,
+                CategoryId = product.CategoryId
+            };
+
+        showEditModal = true;
+    }
+
+    private async Task HandleEditSubmit()
+    {
+        EditProduct.Description = await editProduct.EditProductDescriptionEditor.GetHtmlAsync();
+
+        var response = await ProductService.UpdateProductAsync(selectedProductId, EditProduct);
+        if (response.IsSuccess)
+        {
+            await ToastService.Success("Cập nhật thành công", options: BuildToastInstanceOptions);
+            await LoadProductsAsync();
+        }
+        else
+        {
+            await ToastService.Error("Cập nhật thất bại", options: BuildToastInstanceOptions);
+        }
+
+        showEditModal = false;
     }
 
     private void Previous()

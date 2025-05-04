@@ -11,7 +11,7 @@ public sealed record AddVariantForProduct(
     Guid ProductId,
     decimal OriginalPrice,
     int Quantity,
-    string? ImageUrl,
+    string? ImageData,
     string? ImageAltText,
     IEnumerable<AttributeValue> Attributes,
     DateTime? DiscountStartAt,
@@ -34,9 +34,9 @@ internal sealed class AddVariantForProductHandler(
 
         Image? image = null;
 
-        if (!string.IsNullOrEmpty(command.ImageUrl))
+        if (!string.IsNullOrEmpty(command.ImageData))
         {
-            var imageCreateResult = Image.Create(command.ImageUrl, command.ImageAltText);
+            var imageCreateResult = Image.Create(command.ImageData, command.ImageAltText);
             if (imageCreateResult.IsFailed)
                 return Result.Fail(imageCreateResult.Errors);
 
@@ -62,9 +62,6 @@ internal sealed class AddVariantForProductHandler(
 
             salePrice = salePriceCreationResult.Value;
             salePriceEffectivePeriod = datetimeRangeCreateResult.Value;
-
-            if (salePrice > priceCreateResult.Value)
-                return Result.Fail(new ValidationError("Sale price must be less than the original price"));
         }
 
         var variantCreationResult = ProductVariant.Create(

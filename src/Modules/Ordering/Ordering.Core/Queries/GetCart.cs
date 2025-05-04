@@ -55,7 +55,7 @@ internal sealed class GetCartHandler(
                 ProductName = product.Name,
                 OriginalPrice = variant.OriginalPrice,
                 SalePrice = variant.SalePrice,
-                ImageUrl = variant.ImageUrl,
+                Image = variant.Image,
                 AttributesDescription = attributesDescription
             };
 

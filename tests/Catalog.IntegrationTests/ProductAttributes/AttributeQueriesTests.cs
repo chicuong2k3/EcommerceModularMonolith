@@ -44,7 +44,7 @@ public class AttributeQueriesTests : IntegrationTestBase
         var existingAttributes = await mediator.Send(new GetAttributes());
         foreach (var attr in existingAttributes.Value)
         {
-            await mediator.Send(new DeleteAttribute(attr.Name));
+            await mediator.Send(new DeleteAttribute(attr.Id));
         }
 
         // Act

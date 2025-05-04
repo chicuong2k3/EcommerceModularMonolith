@@ -63,6 +63,18 @@ public class ProductService
         return await _responseHandler.HandleResponse<ProductReadModel>(response);
     }
 
+    public async Task<Response> AddVariantAsync(Guid id, AddVariantRequest request)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/products/{id}/variants", request);
+        return await _responseHandler.HandleResponse(response);
+    }
+
+    public async Task<Response> UpdateVariantAsync(Guid id, Guid variantId, UpdateVariantRequest request)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"api/products/{id}/variants/{variantId}", request);
+        return await _responseHandler.HandleResponse(response);
+    }
+
     public async Task<Response<ProductReadModel>> UpdateProductAsync(Guid id, UpdateProductRequest request)
     {
         var response = await _httpClient.PutAsJsonAsync($"api/products/{id}", request);

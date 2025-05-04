@@ -10,8 +10,8 @@ public record DateTimeRange
 
     private DateTimeRange(DateTime start, DateTime end)
     {
-        Start = start;
-        End = end;
+        Start = start.ToUniversalTime();
+        End = end.ToUniversalTime();
     }
 
     public static Result<DateTimeRange> Create(DateTime start, DateTime end)

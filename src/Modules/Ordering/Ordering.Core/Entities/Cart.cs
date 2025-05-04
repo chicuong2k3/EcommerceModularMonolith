@@ -22,7 +22,7 @@ public class Cart : AggregateRoot
         Items = new List<CartItem>();
     }
 
-    public async Task<Result> AddItemAsync(
+    public Result AddItem(
                         Guid productId,
                         Guid productVariantId,
                         int quantity)

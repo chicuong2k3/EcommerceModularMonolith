@@ -1,0 +1,91 @@
+﻿@inject CategoryService CategoryService
+
+<Modal Visible="@Visible" VisibleChanged="@VisibleChanged">
+    <ModalContent Size="ModalSize.Large">
+        <ModalHeader>
+            <ModalTitle>Chỉnh sửa sản phẩm</ModalTitle>
+            <CloseButton Clicked="@(() => Visible = false)" />
+        </ModalHeader>
+        <ModalBody>
+            <Validations @ref="@validations" Mode="ValidationMode.Manual" Model="@Product">
+                <Validation>
+                    <Field>
+                        <FieldLabel RequiredIndicator>Tên sản phẩm</FieldLabel>
+                        <TextEdit @bind-Text="Product.Name" Placeholder="Điền tên sản phẩm">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>Mô tả sản phẩm</FieldLabel>
+                            <RichTextEdit @ref="@EditProductDescriptionEditor"
+                                          Theme="RichTextEditTheme.Snow" SubmitOnEnter="false"
+                                          PlaceHolder="Mô tả sản phẩm">
+
+                            </RichTextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>Danh mục</FieldLabel>
+                        <Select @bind-SelectedValue="@Product.CategoryId" Loading="@(categories.Count() == 0)">
+                            <ChildContent>
+                                <SelectItem TValue="Guid?" Value="@null">Chọn danh mục</SelectItem>
+                                @foreach (var category in categories)
+                                {
+                                    <SelectItem Value="@category.Id">@category.Name</SelectItem>
+                                }
+                            </ChildContent>
+                        </Select>
+                    </Field>
+                </Validation>
+            </Validations>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
+            <Button Color="Color.Primary" Clicked="Submit">Lưu thay đổi</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public bool Visible { get; set; } = false;
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public UpdateProductRequest Product { get; set; }
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    public RichTextEdit EditProductDescriptionEditor;
+
+    public List<CategoryReadModel> categories { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CategoryService.GetCategoriesAsync();
+        if (response.IsSuccess)
+        {
+            categories = response.Value.ToList();
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private Validations validations;
+    private async Task Submit()
+    {
+        if (await validations.ValidateAll())
+        {
+            await OnSubmit.InvokeAsync();
+            await VisibleChanged.InvokeAsync(false);
+        }
+    }
+}

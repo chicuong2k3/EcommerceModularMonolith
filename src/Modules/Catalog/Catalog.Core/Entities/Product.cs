@@ -1,4 +1,6 @@
-﻿using FluentResults;
+﻿using Catalog.Core.ValueObjects;
+using FluentResults;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Shared.Abstractions.Core;
 
 namespace Catalog.Core.Entities;
@@ -67,6 +69,22 @@ public sealed class Product : AggregateRoot
     public Result UpdateQuantity(Guid variantId, int newQuantity)
     {
         var variant = variants.Where(v => v.Id == variantId).FirstOrDefault();
+        if (variant == null)
+        {
+            return Result.Fail(new NotFoundError($"Variant with id '{variantId}' not found"));
+        }
+        return variant.UpdateVariantQuantity(newQuantity);
+    }
+
+    public Result UpdateVariant(
+        Guid variantId,
+        int newQuantity,
+        Money newOriginalPrice,
+        Money? newSalePrice,
+        DateTimeRange? salePriceEffectivePeriod,
+        Image? image)
+    {
+        var variant = variants.Where(v => v.Id == variantId).FirstOrDefault();
 
         if (variant == null)
         {
@@ -74,8 +92,27 @@ public sealed class Product : AggregateRoot
         }
 
         var result = variant.UpdateVariantQuantity(newQuantity);
-        return result;
+        if (result.IsFailed)
+        {
+            return result;
+        }
+
+        result = variant.UpdatePrice(newOriginalPrice, newSalePrice, salePriceEffectivePeriod);
+        if (result.IsFailed)
+        {
+            return result;
+        }
+
+        result = variant.UpdateImage(image);
+        if (result.IsFailed)
+        {
+            return result;
+        }
+
+        return Result.Ok();
     }
+
+
 
     public Result UpdateInfo(
         string name,

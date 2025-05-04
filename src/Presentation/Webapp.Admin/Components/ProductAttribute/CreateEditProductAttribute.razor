@@ -6,7 +6,7 @@
             <CloseButton Clicked="@(() => Visible = false)" />
         </ModalHeader>
         <ModalBody>
-            <Validations Mode="ValidationMode.Auto" ValidateOnLoad="false" Model="ProductAttribute">
+            <Validations @ref="@validations" Mode="ValidationMode.Manual" Model="ProductAttribute">
                 <Validation>
                     <Field>
                         <FieldLabel RequiredIndicator>Tên thuộc tính sản phẩm</FieldLabel>
@@ -21,20 +21,34 @@
         </ModalBody>
         <ModalFooter>
             <Button Color="Color.Secondary" Clicked="@(() => Visible = false)">Thoát</Button>
-            <Button Color="Color.Primary" Clicked="OnSubmit">Lưu thay đổi</Button>
+            <Button Color="Color.Primary" Clicked="Submit">Lưu thay đổi</Button>
         </ModalFooter>
     </ModalContent>
 </Modal>
 
 @code {
     [Parameter]
+    [EditorRequired]
     public bool Visible { get; set; } = false;
     [Parameter]
+    [EditorRequired]
     public bool IsEditMode { get; set; } = false;
     [Parameter]
+    [EditorRequired]
     public EventCallback OnSubmit { get; set; }
     [Parameter]
+    [EditorRequired]
     public CreateUpdateProductAttributeRequest ProductAttribute { get; set; }
     [Parameter]
     public EventCallback<bool> VisibleChanged { get; set; }
+
+    private Validations validations;
+    private async Task Submit()
+    {
+        if (await validations.ValidateAll())
+        {
+            await OnSubmit.InvokeAsync();
+            await VisibleChanged.InvokeAsync(false);
+        }
+    }
 }

@@ -38,7 +38,7 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Create cart with one item
         var cart = new Cart(Guid.NewGuid(), ownerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         // Verify cart has the item initially
@@ -70,7 +70,7 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Create cart with item quantity of 3
         var cart = new Cart(Guid.NewGuid(), ownerId);
-        await cart.AddItemAsync(productId, variantId, 3);
+        cart.AddItem(productId, variantId, 3);
         await cartRepository.UpsertAsync(cart);
 
         // Verify initial quantity
@@ -127,7 +127,7 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Create cart with one item
         var cart = new Cart(Guid.NewGuid(), ownerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         // Create command with non-existent variant ID
@@ -157,7 +157,7 @@ public class RemoveItemFromCartHandlerTests : IntegrationTestBase
 
         // Create cart with item quantity of 2
         var cart = new Cart(Guid.NewGuid(), ownerId);
-        await cart.AddItemAsync(productId, variantId, 2);
+        cart.AddItem(productId, variantId, 2);
         await cartRepository.UpsertAsync(cart);
 
         // Create command to remove 3 items

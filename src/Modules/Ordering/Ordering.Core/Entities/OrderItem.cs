@@ -13,7 +13,7 @@ public class OrderItem
     public Money SalePrice { get; private set; }
     public int Quantity { get; private set; }
     public string ProductName { get; private set; }
-    public string? ImageUrl { get; }
+    public string? Image { get; }
     public string? AttributesDescription { get; set; }
 
     private OrderItem()
@@ -27,7 +27,7 @@ public class OrderItem
         int quantity,
         Money originalPrice,
         Money salePrice,
-        string? imageUrl,
+        string? image,
         string? attributesDescription)
     {
         Id = Guid.NewGuid();
@@ -37,7 +37,7 @@ public class OrderItem
         Quantity = quantity;
         OriginalPrice = originalPrice;
         SalePrice = salePrice;
-        ImageUrl = imageUrl;
+        Image = image;
         AttributesDescription = attributesDescription;
     }
 
@@ -48,7 +48,7 @@ public class OrderItem
         int quantity,
         Money originalPrice,
         Money salePrice,
-        string? imageUrl,
+        string? image,
         string? attributesDescription)
     {
         if (quantity <= 0)
@@ -57,6 +57,6 @@ public class OrderItem
         if (string.IsNullOrWhiteSpace(productName))
             return Result.Fail(new ValidationError("Product name cannot be empty"));
 
-        return Result.Ok(new OrderItem(productId, productVariantId, productName, quantity, originalPrice, salePrice, imageUrl, attributesDescription));
+        return Result.Ok(new OrderItem(productId, productVariantId, productName, quantity, originalPrice, salePrice, image, attributesDescription));
     }
 }

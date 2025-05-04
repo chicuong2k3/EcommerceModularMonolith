@@ -53,6 +53,17 @@ public class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetProduct), new { id }, getResult.ValueOrDefault);
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
+    {
+        var command = new UpdateProductInfo(id, request.Name, request.Description, request.CategoryId);
+        var result = await mediator.Send(command);
+        if (result.IsFailed)
+            return result.ToActionResult();
+        var getResult = await mediator.Send(new GetProductById(id));
+        return Ok(getResult.ValueOrDefault);
+    }
+
     [HttpPost("{id}/variants")]
     public async Task<IActionResult> AddVariant(Guid id, [FromBody] AddVariantRequest request)
     {
@@ -60,11 +71,11 @@ public class ProductsController : ControllerBase
             id,
             request.OriginalPrice,
             request.Quantity,
-            request.ImageUrl,
+            request.ImageData,
             request.ImageAltText,
             request.Attributes.Select(a => new AttributeValue(a.Name, a.Value)).ToList(),
-            request.DiscountStartAt,
-            request.DiscountEndAt,
+            request.SaleStartDate,
+            request.SaleEndDate,
             request.SalePrice);
 
         var result = await mediator.Send(command);
@@ -78,10 +89,19 @@ public class ProductsController : ControllerBase
         return result.ToActionResult();
     }
 
-    [HttpPost("{id}/variants/{variantId}")]
-    public async Task<IActionResult> UpdateVariantQuantity(Guid id, Guid variantId, [FromBody] int newQuantity)
+    [HttpPut("{id}/variants/{variantId}")]
+    public async Task<IActionResult> UpdateVariantQuantity(Guid id, Guid variantId, [FromBody] UpdateVariantRequest request)
     {
-        var command = new UpdateQuantity(id, variantId, newQuantity);
+        var command = new UpdateVariant(
+            id,
+            variantId,
+            request.Quantity,
+            request.OriginalPrice,
+            request.SalePrice,
+            request.SaleStartDate,
+            request.SaleEndDate,
+            request.ImageData,
+            request.ImageAltText);
         var result = await mediator.Send(command);
         return result.ToActionResult();
     }

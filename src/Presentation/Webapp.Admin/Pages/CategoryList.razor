@@ -1,5 +1,4 @@
 ﻿@page "/admin/categories"
-@layout AdminLayout
 
 @inject CategoryService CategoryService
 @inject IToastService ToastService
@@ -218,9 +217,6 @@
                 await ToastService.Error("Tạo thất bại", options: BuildToastInstanceOptions);
             }
         }
-
-        showModal = false;
-        StateHasChanged();
     }
 
     private async Task HandleDelete()

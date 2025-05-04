@@ -7,7 +7,7 @@ public class ProductVariantReadModel
     public decimal OriginalPrice { get; set; }
     public decimal? SalePrice { get; set; }
     public int Quantity { get; set; }
-    public string? ImageUrl { get; set; }
+    public string? ImageData { get; set; }
     public string? ImageAltText { get; set; }
     public DateTime? DiscountStart { get; set; }
     public DateTime? DiscountEnd { get; set; }

@@ -40,7 +40,7 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(t => t.ImageUrl)
+        builder.Property(t => t.Image)
             .HasMaxLength(2000);
 
         builder.Property(t => t.AttributesDescription)

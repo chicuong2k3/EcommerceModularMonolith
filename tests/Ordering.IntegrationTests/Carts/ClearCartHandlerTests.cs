@@ -38,7 +38,7 @@ public class ClearCartHandlerTests : IntegrationTestBase
 
         // Create cart with items
         var cart = new Cart(Guid.NewGuid(), ownerId);
-        await cart.AddItemAsync(productId, variantId, 1);
+        cart.AddItem(productId, variantId, 1);
         await cartRepository.UpsertAsync(cart);
 
         // Verify cart has items initially
